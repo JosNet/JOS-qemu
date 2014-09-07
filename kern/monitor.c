@@ -24,6 +24,7 @@ struct Command {
 static struct Command commands[] = {
 	{ "help", "Display this list of commands", mon_help },
 	{ "kerninfo", "Display information about the kernel", mon_kerninfo },
+  {"backtrace", "Display a backtrace of the stack to this point", mon_backtrace},
 };
 #define NCOMMANDS (sizeof(commands)/sizeof(commands[0]))
 
@@ -59,7 +60,33 @@ int
 mon_backtrace(int argc, char **argv, struct Trapframe *tf)
 {
 	// Your code here.
-	return 0;
+  int args[]={0,0,0,0,0};
+  struct Eipdebuginfo dbg;
+	int ebp=read_ebp();
+  int eip=ebp+4;
+  args[0]=ebp+8;
+  args[1]=ebp+12;
+  args[2]=ebp+16;
+  args[3]=ebp+20;
+  args[4]=ebp+24;
+  //keep doing this while ebp!=0. I think recursion won't really work here...
+  cprintf("Stack backtrace:\n");
+  while (ebp!=0)
+  {
+    //do the debug info
+    if (debuginfo_eip(*((int*)eip), &dbg)==-1)
+      cprintf("backtrace debug error\n");
+    cprintf("  ebp %08x  eip %08x  args %08x %08x %08x %08x %08x\n", ebp, eip, *((int*)args[0]), *((int*)args[1]), *((int*)args[2]), *((int*)args[3]), *((int*)args[4]));
+    cprintf("     %s:%d: %.*s+%d\n", dbg.eip_file, dbg.eip_line, dbg.eip_fn_namelen, dbg.eip_fn_name, *((int*)eip)-dbg.eip_fn_addr);
+    ebp=*((int*)ebp); //cast ebp to pointer and dereference that thing it points at (the previous ebp)
+    eip=ebp+4;
+    args[0]=ebp+8;
+    args[1]=ebp+12;
+    args[2]=ebp+16;
+    args[3]=ebp+20;
+    args[4]=ebp+24;
+  }
+  return 0;
 }
 
 
