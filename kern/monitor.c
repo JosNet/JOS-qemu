@@ -61,10 +61,10 @@ mon_backtrace(int argc, char **argv, struct Trapframe *tf)
 {
 	// Your code here.
   int stackframes=0;
-  int args[]={0,0,0,0,0};
+  uint32_t args[]={0,0,0,0,0};
   struct Eipdebuginfo dbg;
-	int ebp=read_ebp();
-  int eip=ebp+4;
+	uint32_t ebp=read_ebp();
+  uint32_t eip=ebp+4;
   args[0]=ebp+8;
   args[1]=ebp+12;
   args[2]=ebp+16;
@@ -75,11 +75,11 @@ mon_backtrace(int argc, char **argv, struct Trapframe *tf)
   while (ebp!=0)
   {
     //do the debug info
-    if (debuginfo_eip(*((int*)eip), &dbg)==-1)
+    if (debuginfo_eip(*((uint32_t*)eip), &dbg)==-1)
       cprintf("backtrace debug error\n");
-    cprintf("ebp %08x  eip %08x  args %08x %08x %08x %08x %08x \n", ebp, eip, *((int*)args[0]), *((int*)args[1]), *((int*)args[2]), *((int*)args[3]), *((int*)args[4]));
-    cprintf("\t%s:%d: %.*s+%d \n", dbg.eip_file, dbg.eip_line, dbg.eip_fn_namelen, dbg.eip_fn_name, *((int*)eip)-dbg.eip_fn_addr);
-    ebp=*((int*)ebp); //cast ebp to pointer and dereference that thing it points at (the previous ebp)
+    cprintf("ebp %08x  eip %08x  args %08x %08x %08x %08x %08x \n", ebp, eip, *((uint32_t*)args[0]), *((uint32_t*)args[1]), *((uint32_t*)args[2]), *((uint32_t*)args[3]), *((uint32_t*)args[4]));
+    cprintf("\t%s:%d: %.*s+%d\n", dbg.eip_file, dbg.eip_line, dbg.eip_fn_namelen, dbg.eip_fn_name, *((uint32_t*)eip)-dbg.eip_fn_addr);
+    ebp=*((uint32_t*)ebp); //cast ebp to pointer and dereference that thing it points at (the previous ebp)
     eip=ebp+4;
     args[0]=ebp+8;
     args[1]=ebp+12;
