@@ -98,7 +98,20 @@ boot_alloc(uint32_t n)
 	// to a multiple of PGSIZE.
 	//
 	// LAB 2: Your code here.
-
+  if (n==0)
+  {
+    return nextfree;
+  }
+  else if (n>0)
+  {
+    char* address=nextfree;
+    nextfree=ROUNDUP(nextfree, PGSIZE*n);
+    if (address>nextfree)
+      panic("embarassing: not enough memory to even bootstrap\n");
+    return address;
+  }
+  panic("i don't even\n");
+  //should never really get here
 	return NULL;
 }
 
@@ -144,6 +157,8 @@ mem_init(void)
 	// array.  'npages' is the number of physical pages in memory.  Use memset
 	// to initialize all fields of each struct PageInfo to 0.
 	// Your code goes here:
+  pages=(struct PageInfo*) boot_alloc(npages*PGSIZE);
+  memset(pages, 0, npages*PGSIZE);
 
 
 	//////////////////////////////////////////////////////////////////////
@@ -248,7 +263,7 @@ page_init(void)
 	// NB: DO NOT actually touch the physical memory corresponding to
 	// free pages!
 	size_t i;
-	for (i = 0; i < npages; i++) {
+	for (i = 1; i < npages; i++) {
 		pages[i].pp_ref = 0;
 		pages[i].pp_link = page_free_list;
 		page_free_list = &pages[i];
