@@ -105,12 +105,13 @@ boot_alloc(uint32_t n)
   else if (n>0)
   {
     char* address=nextfree;
-    nextfree=ROUNDUP(nextfree, PGSIZE*n);
-    if (address>nextfree)
+    nextfree+=n;
+    nextfree=ROUNDUP(nextfree, PGSIZE);
+    if (address>=nextfree)
       panic("embarassing: not enough memory to even bootstrap\n");
     return address;
   }
-  panic("i don't even\n");
+  panic("unintended code path in boot_alloc\n");
   //should never really get here
 	return NULL;
 }
@@ -134,7 +135,7 @@ mem_init(void)
 	i386_detect_memory();
 
 	// Remove this line when you're ready to test this function.
-	panic("mem_init: This function is not finished\n");
+	//panic("mem_init: This function is not finished\n");
 
 	//////////////////////////////////////////////////////////////////////
 	// create initial page directory.
@@ -157,8 +158,8 @@ mem_init(void)
 	// array.  'npages' is the number of physical pages in memory.  Use memset
 	// to initialize all fields of each struct PageInfo to 0.
 	// Your code goes here:
-  pages=(struct PageInfo*) boot_alloc(npages*PGSIZE);
-  memset(pages, 0, npages*PGSIZE);
+  pages=(struct PageInfo*) boot_alloc(npages*sizeof(struct PageInfo));
+  memset(pages, 0, npages*sizeof(struct PageInfo));
 
 
 	//////////////////////////////////////////////////////////////////////
@@ -170,7 +171,7 @@ mem_init(void)
 	page_init();
 
 	check_page_free_list(1);
-	check_page_alloc();
+  check_page_alloc();
 	check_page();
 
 	//////////////////////////////////////////////////////////////////////
@@ -183,6 +184,7 @@ mem_init(void)
 	//      (ie. perm = PTE_U | PTE_P)
 	//    - pages itself -- kernel RW, user NONE
 	// Your code goes here:
+  kern_pgdir[PDX(UPAGES)]=PADDR(pages) | PTE_U | PTE_P;
 
 	//////////////////////////////////////////////////////////////////////
 	// Use the physical memory that 'bootstack' refers to as the kernel
@@ -195,6 +197,7 @@ mem_init(void)
 	//       overwrite memory.  Known as a "guard page".
 	//     Permissions: kernel RW, user NONE
 	// Your code goes here:
+  kern_pgdir[PDX(KSTACKTOP)]=PADDR(bootstack);
 
 	//////////////////////////////////////////////////////////////////////
 	// Map all of physical memory at KERNBASE.
@@ -263,7 +266,21 @@ page_init(void)
 	// NB: DO NOT actually touch the physical memory corresponding to
 	// free pages!
 	size_t i;
+  page_free_list=NULL;
+  pages[0].pp_link=NULL;
 	for (i = 1; i < npages; i++) {
+    if (page2pa(&pages[i])>=IOPHYSMEM && page2pa(&pages[i])<EXTPHYSMEM)
+    {
+      pages[i].pp_ref=1;
+      pages[i].pp_link=NULL;
+      continue;
+    }
+    if (page2pa(&pages[i])>=0x10000 && page2pa(&pages[i])<PADDR(boot_alloc(0)))
+    {
+      pages[i].pp_ref=1;
+      pages[i].pp_link=NULL;
+      continue;
+    }
 		pages[i].pp_ref = 0;
 		pages[i].pp_link = page_free_list;
 		page_free_list = &pages[i];
@@ -286,7 +303,16 @@ struct PageInfo *
 page_alloc(int alloc_flags)
 {
 	// Fill this function in
-	return 0;
+  struct PageInfo* out=page_free_list;
+  if (out==NULL)
+    return NULL;
+  page_free_list=out->pp_link;
+  out->pp_link=NULL;
+  if ((alloc_flags & ALLOC_ZERO))
+  {
+    memset(page2kva(out), '\0', PGSIZE);
+  }
+	return out;
 }
 
 //
@@ -299,6 +325,12 @@ page_free(struct PageInfo *pp)
 	// Fill this function in
 	// Hint: You may want to panic if pp->pp_ref is nonzero or
 	// pp->pp_link is not NULL.
+  if (pp->pp_ref>0 || pp->pp_link!=NULL)
+  {
+    panic("pp ref >0 or pp link is not NULL\n");
+  }
+  pp->pp_link=page_free_list;
+  page_free_list=pp;
 }
 
 //
@@ -474,12 +506,13 @@ check_page_free_list(bool only_low_memory)
 		*tp[0] = pp2;
 		page_free_list = pp1;
 	}
-
 	// if there's a page that shouldn't be on the free list,
 	// try to make sure it eventually causes trouble.
 	for (pp = page_free_list; pp; pp = pp->pp_link)
 		if (PDX(page2pa(pp)) < pdx_limit)
+    {
 			memset(page2kva(pp), 0x97, 128);
+    }
 
 	first_free_page = (char *) boot_alloc(0);
 	for (pp = page_free_list; pp; pp = pp->pp_link) {

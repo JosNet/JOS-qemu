@@ -1,5 +1,5 @@
-/* See COPYRIGHT for copyright information. */
 
+/* See COPYRIGHT for copyright information. */
 #ifndef JOS_KERN_PMAP_H
 #define JOS_KERN_PMAP_H
 #ifndef JOS_KERNEL
