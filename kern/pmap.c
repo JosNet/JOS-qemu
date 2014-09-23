@@ -476,6 +476,10 @@ page_insert(pde_t *pgdir, struct PageInfo *pp, void *va, int perm)
     //it already exists
     pgfo=pa2page(*page);
   }
+  if (pgfo==pp)
+    return 0;
+  page_remove(pgdir, va);
+  /*
   if (pgfo!=pp)
   {
     //now we remove the page there
@@ -483,8 +487,9 @@ page_insert(pde_t *pgdir, struct PageInfo *pp, void *va, int perm)
       page_remove(pgdir, va);
     ++(pp->pp_ref);
   }
-  *page=page2pa(pp) | perm | PTE_P;
    tlb_invalidate(pgdir, va);
+  */
+   *page=page2pa(pp) | perm | PTE_P;
 	return 0;
 }
 
