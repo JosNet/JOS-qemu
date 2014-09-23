@@ -376,7 +376,24 @@ pte_t *
 pgdir_walk(pde_t *pgdir, const void *va, int create)
 {
 	// Fill this function in
-  physaddr_t page_address=((pgdir[PDX(va)]>>12)<<12)+PTX(va);
+  pde_t* pde;
+  pte_t* pgtab;
+  pde=&pgdir[PDX(va)];
+  if (*pde & PTE_P)
+  {
+    pgtab=(pte_t*)KADDR(PTE_ADDR(*pde));
+  }
+  else
+  {
+    if (!create)
+      return NULL;
+    pgtab=(pte_t*)page2kva(page_alloc(ALLOC_ZERO));
+    if (pgtab==NULL)
+      return NULL;
+    *pde=PADDR(pgtab) | PTE_P | PTE_W | PTE_U;
+  }
+  return &pgtab[PTX(va)];
+  /*physaddr_t page_address=((pgdir[PDX(va)]>>12)<<12)+PTX(va);
   pte_t* out=KADDR(page_address);
 	if ((*out)&0x00000001)
   {
@@ -390,6 +407,7 @@ pgdir_walk(pde_t *pgdir, const void *va, int create)
     return NULL; //out of memory
   newpage->pp_ref+=1;
   return (pte_t*)page2pa(newpage);
+  */
 }
 
 //
@@ -444,20 +462,27 @@ int
 page_insert(pde_t *pgdir, struct PageInfo *pp, void *va, int perm)
 {
 	// Fill this function in
+  struct PageInfo* pgfo=NULL;
   pte_t* page=pgdir_walk(pgdir, va, 1);
   if (page==NULL)
   {
     //we're out of memory
+    cprintf("no mem\n");
     return E_NO_MEM;
   }
-  struct PageInfo* pgfo=pa2page(*page);
+  if (*page)
+  {
+    //it already exists
+    pgfo=pa2page(*page);
+  }
   if (pgfo!=pp)
   {
     //now we remove the page there
     page_remove(pgdir, va);
+    pp->pp_ref+=1;
     tlb_invalidate(pgdir, va);
   }
-  pp->pp_ref+=1;
+   tlb_invalidate(pgdir, va);
   *page=page2pa(pp) | perm | PTE_P;
 	return 0;
 }
