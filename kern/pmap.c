@@ -378,14 +378,16 @@ pgdir_walk(pde_t *pgdir, const void *va, int create)
 	// Fill this function in
   physaddr_t page_address=((pgdir[PDX(va)]>>12)<<12)+PTX(va);
   pte_t* out=KADDR(page_address);
-	if ((*out)&0xfffffff1)
+	if ((*out)&0x00000001)
   {
     //page is present
     return out;
   }
   if (create==false)
-    return NULL;
+    return NULL; //page doesn't exist yet
   struct PageInfo* newpage=page_alloc(ALLOC_ZERO);
+  if (newpage==NULL)
+    return NULL; //out of memory
   newpage->pp_ref+=1;
   return (pte_t*)page2pa(newpage);
 }
@@ -405,8 +407,12 @@ static void
 boot_map_region(pde_t *pgdir, uintptr_t va, size_t size, physaddr_t pa, int perm)
 {
 	// Fill this function in
-  unsigned int valoc=va;
-  for (va; va<
+  unsigned int valoc;
+  for (valoc=va; valoc<va+size; va+=PGSIZE, pa+=PGSIZE)
+  {
+    pte_t* page=pgdir_walk(pgdir, (void*)valoc, true);
+    (*page)=pa|perm|PTE_P;
+  }
 }
 
 //
@@ -438,6 +444,12 @@ int
 page_insert(pde_t *pgdir, struct PageInfo *pp, void *va, int perm)
 {
 	// Fill this function in
+  pte_t* page=pgdir_walk(pgdir, va, 1);
+  if (page==NULL)
+  {
+    //we're out of memory
+    return E_NO_MEM;
+  }
 	return 0;
 }
 
