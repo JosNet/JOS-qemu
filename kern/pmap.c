@@ -197,7 +197,7 @@ mem_init(void)
 	//       overwrite memory.  Known as a "guard page".
 	//     Permissions: kernel RW, user NONE
 	// Your code goes here:
-  kern_pgdir[PDX(KSTACKTOP)]=PADDR(bootstack);
+  kern_pgdir[PDX(KSTACKTOP-KSTKSIZE)]=(PADDR(bootstack)-KSTKSIZE) | PTE_P | PTE_W;
 
 	//////////////////////////////////////////////////////////////////////
 	// Map all of physical memory at KERNBASE.
@@ -207,6 +207,12 @@ mem_init(void)
 	// we just set up the mapping anyway.
 	// Permissions: kernel RW, user NONE
 	// Your code goes here:
+  unsigned int stoploc=(2^32)-KERNBASE;
+  int location=0;
+  for (location=0; location<stoploc; location+=PGSIZE)
+  {
+    kern_pgdir[PDX(KERNBASE+location)]=location | PTE_P | PTE_W;
+  }
 
 	// Check that the initial page directory has been set up correctly.
 	check_kern_pgdir();
@@ -370,7 +376,18 @@ pte_t *
 pgdir_walk(pde_t *pgdir, const void *va, int create)
 {
 	// Fill this function in
-	return NULL;
+  physaddr_t page_address=((pgdir[PDX(va)]>>12)<<12)+PTX(va);
+  pte_t* out=KADDR(page_address);
+	if ((*out)&0xfffffff1)
+  {
+    //page is present
+    return out;
+  }
+  if (create==false)
+    return NULL;
+  struct PageInfo* newpage=page_alloc(ALLOC_ZERO);
+  newpage->pp_ref+=1;
+  return (pte_t*)page2pa(newpage);
 }
 
 //
