@@ -450,6 +450,15 @@ page_insert(pde_t *pgdir, struct PageInfo *pp, void *va, int perm)
     //we're out of memory
     return E_NO_MEM;
   }
+  struct PageInfo* pgfo=pa2page(*page);
+  if (pgfo!=pp)
+  {
+    //now we remove the page there
+    page_remove(pgdir, va);
+    tlb_invalidate(pgdir, va);
+  }
+  pp->pp_ref+=1;
+  *page=page2pa(pp) | perm | PTE_P;
 	return 0;
 }
 
@@ -467,8 +476,14 @@ page_insert(pde_t *pgdir, struct PageInfo *pp, void *va, int perm)
 struct PageInfo *
 page_lookup(pde_t *pgdir, void *va, pte_t **pte_store)
 {
-	// Fill this function in
-	return NULL;
+	pte_t* page=pgdir_walk(pgdir, va, 0);
+  if (page==NULL)
+    return NULL;
+  if (pte_store>0)
+  {
+    *pte_store=page;
+  }
+	return pa2page(*page);
 }
 
 //
@@ -490,6 +505,14 @@ void
 page_remove(pde_t *pgdir, void *va)
 {
 	// Fill this function in
+  struct PageInfo* pgfo;
+  pte_t* page;
+  pgfo=page_lookup(pgdir, va, &page);
+  if (pgfo==NULL)
+    return;
+  page_decref(pgfo);
+  *page=0;
+  tlb_invalidate(pgdir, va);
 }
 
 //
