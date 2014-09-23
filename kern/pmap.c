@@ -405,6 +405,8 @@ static void
 boot_map_region(pde_t *pgdir, uintptr_t va, size_t size, physaddr_t pa, int perm)
 {
 	// Fill this function in
+  unsigned int valoc=va;
+  for (va; va<
 }
 
 //
