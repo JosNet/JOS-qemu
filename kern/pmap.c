@@ -170,9 +170,13 @@ mem_init(void)
 	// or page_insert
 	page_init();
 
+  cprintf("checking page_free list\n");
 	check_page_free_list(1);
+  cprintf("check success\n");
   check_page_alloc();
+  cprintf("checking pages\n");
 	check_page();
+  cprintf("done check page\n");
 
 	//////////////////////////////////////////////////////////////////////
 	// Now we set up virtual memory
@@ -184,7 +188,7 @@ mem_init(void)
 	//      (ie. perm = PTE_U | PTE_P)
 	//    - pages itself -- kernel RW, user NONE
 	// Your code goes here:
-  kern_pgdir[PDX(UPAGES)]=PADDR(pages) | PTE_U | PTE_P;
+  boot_map_region(kern_pgdir, UPAGES, ROUNDUP(sizeof(pages[0])*npages, PGSIZE), PADDR(pages), PTE_U|PTE_P);
 
 	//////////////////////////////////////////////////////////////////////
 	// Use the physical memory that 'bootstack' refers to as the kernel
@@ -197,8 +201,7 @@ mem_init(void)
 	//       overwrite memory.  Known as a "guard page".
 	//     Permissions: kernel RW, user NONE
 	// Your code goes here:
-  kern_pgdir[PDX(KSTACKTOP-KSTKSIZE)]=(PADDR(bootstack)-KSTKSIZE) | PTE_P | PTE_W;
-
+  boot_map_region(kern_pgdir, KSTACKTOP-KSTKSIZE, ROUNDUP(KSTKSIZE,PGSIZE),PADDR(bootstack),PTE_W);
 	//////////////////////////////////////////////////////////////////////
 	// Map all of physical memory at KERNBASE.
 	// Ie.  the VA range [KERNBASE, 2^32) should map to
@@ -207,12 +210,7 @@ mem_init(void)
 	// we just set up the mapping anyway.
 	// Permissions: kernel RW, user NONE
 	// Your code goes here:
-  unsigned int stoploc=(2^32)-KERNBASE;
-  int location=0;
-  for (location=0; location<stoploc; location+=PGSIZE)
-  {
-    kern_pgdir[PDX(KERNBASE+location)]=location | PTE_P | PTE_W;
-  }
+  boot_map_region(kern_pgdir, KERNBASE, ROUNDUP(0xffffffff-KERNBASE,PGSIZE), 0, PTE_W);
 
 	// Check that the initial page directory has been set up correctly.
 	check_kern_pgdir();
@@ -226,6 +224,7 @@ mem_init(void)
 	// kern_pgdir wrong.
 	lcr3(PADDR(kern_pgdir));
 
+  cprintf("checking page_free list\n");
 	check_page_free_list(0);
 
 	// entry.S set the really important flags in cr0 (including enabling
@@ -387,7 +386,10 @@ pgdir_walk(pde_t *pgdir, const void *va, int create)
   {
     if (!create)
       return NULL;
-    pgtab=(pte_t*)page2kva(page_alloc(ALLOC_ZERO));
+    struct PageInfo* tpage=page_alloc(ALLOC_ZERO);
+    if (tpage==NULL)
+      return NULL;
+    pgtab=(pte_t*)page2kva(tpage);
     if (pgtab==NULL)
       return NULL;
     *pde=PADDR(pgtab) | PTE_P | PTE_W | PTE_U;
@@ -467,8 +469,7 @@ page_insert(pde_t *pgdir, struct PageInfo *pp, void *va, int perm)
   if (page==NULL)
   {
     //we're out of memory
-    cprintf("no mem\n");
-    return E_NO_MEM;
+    return -E_NO_MEM;
   }
   if (*page)
   {
@@ -478,12 +479,12 @@ page_insert(pde_t *pgdir, struct PageInfo *pp, void *va, int perm)
   if (pgfo!=pp)
   {
     //now we remove the page there
-    page_remove(pgdir, va);
-    pp->pp_ref+=1;
-    tlb_invalidate(pgdir, va);
+    if (pgfo)
+      page_remove(pgdir, va);
+    ++(pp->pp_ref);
   }
-   tlb_invalidate(pgdir, va);
   *page=page2pa(pp) | perm | PTE_P;
+   tlb_invalidate(pgdir, va);
 	return 0;
 }
 
@@ -799,12 +800,15 @@ check_page(void)
 
 	// there is no free memory, so we can't allocate a page table
 	assert(page_insert(kern_pgdir, pp1, 0x0, PTE_W) < 0);
+  //panic("breakpoint");
 
 	// free pp0 and try again: pp0 should be used for page table
-	page_free(pp0);
+	
+  page_free(pp0);
 	assert(page_insert(kern_pgdir, pp1, 0x0, PTE_W) == 0);
 	assert(PTE_ADDR(kern_pgdir[0]) == page2pa(pp0));
 	assert(check_va2pa(kern_pgdir, 0x0) == page2pa(pp1));
+	cprintf("pp1 ref: %d\n", pp1->pp_ref);
 	assert(pp1->pp_ref == 1);
 	assert(pp0->pp_ref == 1);
 
