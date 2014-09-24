@@ -414,6 +414,12 @@ boot_map_region(pde_t *pgdir, uintptr_t va, size_t size, physaddr_t pa, int perm
   }
 }
 
+
+unsigned int pa2va(physaddr_t pa)
+{
+  return *(pte_t*)KADDR(pa);
+}
+
 //
 // Map the physical page 'pp' at virtual address 'va'.
 // The permissions (the low 12 bits) of the page table entry
