@@ -13,6 +13,7 @@
 
 #define CMDBUF_SIZE	80	// enough for one VGA text line
 
+struct PageInfo *user_page_lookup(void *va, pte_t **pte_store);
 
 struct Command {
 	const char *name;
@@ -25,6 +26,7 @@ static struct Command commands[] = {
 	{ "help", "Display this list of commands", mon_help },
 	{ "kerninfo", "Display information about the kernel", mon_kerninfo },
   {"backtrace", "Display a backtrace of the stack to this point", mon_backtrace},
+  {"showmappings", "Show kernel page mappings from a to b", mon_showmappings},
 };
 #define NCOMMANDS (sizeof(commands)/sizeof(commands[0]))
 
@@ -54,6 +56,22 @@ mon_kerninfo(int argc, char **argv, struct Trapframe *tf)
 	cprintf("Kernel executable memory footprint: %dKB\n",
 		ROUNDUP(end - entry, 1024) / 1024);
 	return 0;
+}
+
+int
+mon_showmappings(int argc, char **argv, struct Trapframe *tf)
+{
+  if (argc<3)
+  {
+    cprintf("usage: showmappings va1 va2\n");
+    return 0;
+  }
+  cprintf("this function should show page mappings\n");
+  struct PageInfo* page;
+  pte_t* pte;
+  page=user_page_lookup((void*)0x3000, &pte);
+  cprintf("%p\n", pte);
+  return 0;
 }
 
 int

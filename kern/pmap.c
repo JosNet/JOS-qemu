@@ -210,7 +210,6 @@ mem_init(void)
 
 	// Check that the initial page directory has been set up correctly.
 	check_kern_pgdir();
-  cprintf("pass kernel pgdir check\n");
 
 	// Switch from the minimal entry page directory to the full kern_pgdir
 	// page table we just created.	Our instruction pointer should be
@@ -221,7 +220,6 @@ mem_init(void)
 	// kern_pgdir wrong.
 	lcr3(PADDR(kern_pgdir));
 
-  cprintf("checking page_free list\n");
 	check_page_free_list(0);
 
 	// entry.S set the really important flags in cr0 (including enabling
@@ -489,6 +487,14 @@ page_lookup(pde_t *pgdir, void *va, pte_t **pte_store)
     *pte_store=page;
   }
 	return pa2page(*page);
+}
+
+
+///looking up pages form userland
+struct PageInfo*
+user_page_lookup(void* va, pte_t** pte_store)
+{
+  return page_lookup(kern_pgdir, va, pte_store);
 }
 
 //
