@@ -273,6 +273,7 @@ page_init(void)
 	size_t i;
   page_free_list=NULL;
   pages[0].pp_link=NULL;
+  pages[0].pp_ref=1;
 	for (i = 1; i < npages; i++) {
     if (page2pa(&pages[i])>=IOPHYSMEM && page2pa(&pages[i])<EXTPHYSMEM)
     {
@@ -471,14 +472,18 @@ page_insert(pde_t *pgdir, struct PageInfo *pp, void *va, int perm)
     //we're out of memory
     return -E_NO_MEM;
   }
-  if (*page)
+  if (*page & PTE_P)
   {
     //it already exists
     pgfo=pa2page(*page);
-  }
   if (pgfo==pp)
-    return 0;
+    {
+      ++(pp->pp_ref);
+      //return 0;
+    }
   page_remove(pgdir, va);
+  }
+  ++(pp->pp_ref);
   /*
   if (pgfo!=pp)
   {
@@ -814,6 +819,7 @@ check_page(void)
 	assert(PTE_ADDR(kern_pgdir[0]) == page2pa(pp0));
 	assert(check_va2pa(kern_pgdir, 0x0) == page2pa(pp1));
 	cprintf("pp1 ref: %d\n", pp1->pp_ref);
+	cprintf("pp0 ref: %d\n", pp0->pp_ref);
 	assert(pp1->pp_ref == 1);
 	assert(pp0->pp_ref == 1);
 
