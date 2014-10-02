@@ -54,7 +54,9 @@
  */
 _alltraps:
 ;set up the trapframe structure
-  pusha ;push whole bunch of useless things
-  pushl %es ;es reg
+  pusha       ;push whole bunch of useless things
+  pushl %es   ;es reg
   pushl $0x69 ;padding1
+  pushl %ds   ;ds reg
+  pushl $0x69 ;padding2
 
