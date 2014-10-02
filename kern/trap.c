@@ -70,7 +70,7 @@ trap_init(void)
   int i=0;
   for (i=0; i<256; ++i)
   {
-    SETGATE(idt[i], 0, 1, vectors[i], 0);
+    SETGATE(idt[i], 0, GD_KT, vectors[i], 0);
   }
 
 	// Per-CPU setup

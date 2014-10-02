@@ -46,44 +46,50 @@
 	pushl $(num);							\
 	jmp _alltraps
 
+#define better_TRAPHANDLER_NOEC(name, num)					\
+	name:								\
+	pushl $0;							\
+	pushl $(num);							\
+	jmp _alltraps
+
 .text
 
 /*
  * Lab 3: Your code here for generating entry points for the different traps.
  */
 
-better_TRAPHANDLER(vector0,0)
-better_TRAPHANDLER(vector1,1)
-better_TRAPHANDLER(vector2,2)
-better_TRAPHANDLER(vector3,3)
-better_TRAPHANDLER(vector4,4)
-better_TRAPHANDLER(vector5,5)
-better_TRAPHANDLER(vector6,6)
-better_TRAPHANDLER(vector7,7)
+better_TRAPHANDLER_NOEC(vector0,0)
+better_TRAPHANDLER_NOEC(vector1,1)
+better_TRAPHANDLER_NOEC(vector2,2)
+better_TRAPHANDLER_NOEC(vector3,3)
+better_TRAPHANDLER_NOEC(vector4,4)
+better_TRAPHANDLER_NOEC(vector5,5)
+better_TRAPHANDLER_NOEC(vector6,6)
+better_TRAPHANDLER_NOEC(vector7,7)
 better_TRAPHANDLER(vector8,8)
-better_TRAPHANDLER(vector9,9)
+better_TRAPHANDLER_NOEC(vector9,9)
 better_TRAPHANDLER(vector10,10)
 better_TRAPHANDLER(vector11,11)
 better_TRAPHANDLER(vector12,12)
 better_TRAPHANDLER(vector13,13)
 better_TRAPHANDLER(vector14,14)
 better_TRAPHANDLER(vector15,15)
-better_TRAPHANDLER(vector16,16)
-better_TRAPHANDLER(vector17,17)
-better_TRAPHANDLER(vector18,18)
-better_TRAPHANDLER(vector19,19)
-better_TRAPHANDLER(vector20,20)
-better_TRAPHANDLER(vector21,21)
-better_TRAPHANDLER(vector22,22)
-better_TRAPHANDLER(vector23,23)
-better_TRAPHANDLER(vector24,24)
-better_TRAPHANDLER(vector25,25)
-better_TRAPHANDLER(vector26,26)
-better_TRAPHANDLER(vector27,27)
-better_TRAPHANDLER(vector28,28)
-better_TRAPHANDLER(vector29,29)
-better_TRAPHANDLER(vector30,30)
-better_TRAPHANDLER(vector31,31)
+better_TRAPHANDLER_NOEC(vector16,16)
+better_TRAPHANDLER_NOEC(vector17,17)
+better_TRAPHANDLER_NOEC(vector18,18)
+better_TRAPHANDLER_NOEC(vector19,19)
+better_TRAPHANDLER_NOEC(vector20,20)
+better_TRAPHANDLER_NOEC(vector21,21)
+better_TRAPHANDLER_NOEC(vector22,22)
+better_TRAPHANDLER_NOEC(vector23,23)
+better_TRAPHANDLER_NOEC(vector24,24)
+better_TRAPHANDLER_NOEC(vector25,25)
+better_TRAPHANDLER_NOEC(vector26,26)
+better_TRAPHANDLER_NOEC(vector27,27)
+better_TRAPHANDLER_NOEC(vector28,28)
+better_TRAPHANDLER_NOEC(vector29,29)
+better_TRAPHANDLER_NOEC(vector30,30)
+better_TRAPHANDLER_NOEC(vector31,31)
 
 
 /*
@@ -91,20 +97,9 @@ better_TRAPHANDLER(vector31,31)
  */
 _alltraps:
 //;set up the trapframe structure
-  pusha       //;push whole bunch of useless things
-  pushl %es   //;es reg
-  pushl $0x69 //;padding1
-  pushl %ds   //;ds reg
-  pushl $0x69 //;padding2
-  pushl 40(%esp) //tf number
-  pushl 44(%esp) //error code zero if none
-  pushl 48(%esp) //old eip
-  pushl 52(%esp) //old cs
-  pushl $0x69 //padding
-  pushl 56(%esp) //old eflags
-  pushl 60(%esp) //old esp
-  pushl 64(%esp) //old ss
-  pushl $0x69 //padding
+  pushl %es
+  pushl %ds
+  pushal
   movw $GD_KD,%ax
   movw %ax,%ds
   movw %ax,%ds
