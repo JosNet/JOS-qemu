@@ -197,11 +197,12 @@ env_setup_vm(struct Env *e)
 	// LAB 3: Your code here.
   ++(p->pp_ref); //increase pp ref
   e->env_pgdir=page2kva(p); //get a pointer to the actual memory
-  memcpy(e->env_pgdir, kern_pgdir, sizeof(int)); //use kern_pgdir as a template. these fucking imaginary data types are all ints. there's no need to be confusing</endrant>
-
-	// UVPT maps the env's own page table read-only.
+  memset(e->env_pgdir, 0, PGSIZE); //clear it
+  memcpy(&e->env_pgdir[PDX(UTOP)], &kern_pgdir[PDX(UTOP)], NPDENTRIES-PDX(UTOP)); //everything >=UTOP is the same
+  // UVPT maps the env's own page table read-only.
 	// Permissions: kernel R, user R
 	e->env_pgdir[PDX(UVPT)] = PADDR(e->env_pgdir) | PTE_P | PTE_U;
+
   cprintf("env_setup end\n");
 	return 0;
 }
@@ -287,21 +288,18 @@ region_alloc(struct Env *e, void *va, size_t len)
 	//   You should round va down, and round (va + len) up.
 	//   (Watch out for corner-cases!)
   cprintf("region_alloc start\n");
-  len=ROUNDUP((int)va+len, PGSIZE);
-  if ((int)va>len)
-  {
-    panic("region alloc: memory overflow\n");
-  }
-  int realva=ROUNDDOWN((int)va, PGSIZE);
-  int npages=len/PGSIZE;
-  int i=0;
-	for (i=0; i<npages; ++i)
+  int start=ROUNDDOWN((int)va, PGSIZE);
+  int end=ROUNDUP(((int)va)+len, PGSIZE);
+  if (start>end)
+    panic("region alloc overflows");
+  while(start<end)
   {
     struct PageInfo *p = NULL;
 	  // Allocate a page for da mapping
 	  if (!(p = page_alloc(ALLOC_ZERO)))
 		  panic("region_alloc: out of memory\n");
-    page_insert(e->env_pgdir, p, (int*)(realva+PGSIZE*i), PTE_U | PTE_W);
+    page_insert(e->env_pgdir, p, (int*)start, PTE_U | PTE_W);
+    start+=PGSIZE;
   }
   cprintf("region_alloc end\n");
   return;
@@ -370,7 +368,9 @@ load_icode(struct Env *e, uint8_t *binary)
       panic("load_icode stack setup: out of memory");
   boot_map_region(e->env_pgdir, USTACKTOP-PGSIZE, PGSIZE, page2pa(p), PTE_U | PTE_W);
 	cprintf("done boot_map_region\n");
-  e->env_tf.tf_esp=USTACKTOP; //initialize the stack
+  lcr3(PADDR(e->env_pgdir));
+  cprintf("switched pgdir\n");
+  //e->env_tf.tf_esp=USTACKTOP; //initialize the stack
   // LAB 3: Your code here.
   struct Elf* elf=(struct Elf*)binary;
   struct Proghdr *ph, *eph;
@@ -389,13 +389,13 @@ load_icode(struct Env *e, uint8_t *binary)
       int va=ph->p_va;
       int size=ph->p_memsz;
       region_alloc(e, (void*)va, size);
-      *(int*)(va)=0x69;
-      //memcpy((int*)va, binary+ph->p_offset, ph->p_filesz);//
-      //memcpy((int*)va, 0, ph->p_filesz);//
+      memcpy((int*)va, binary+ph->p_offset, ph->p_filesz); //copy over program
+      memset((int*)(ph->p_va+ph->p_filesz), 0, ph->p_memsz-ph->p_filesz); //zero remaining bytes
       cprintf("loaded ph:%p\n", ph);
     }
   }
   e->env_tf.tf_eip=elf->e_entry; //set the entry point
+  lcr3(PADDR(kern_pgdir));
   cprintf("load_icode end\n");
 }
 
@@ -410,10 +410,12 @@ void
 env_create(uint8_t *binary, enum EnvType type)
 {
 	// LAB 3: Your code here.
+  cprintf("start env_create\n");
   struct Env* e=NULL;
   env_alloc(&e, 0);
   e->env_type=type;
   load_icode(e, binary);
+  cprintf("end env_create\n");
 }
 
 //
@@ -529,6 +531,7 @@ env_run(struct Env *e)
 	//	e->env_tf to sensible values.
 
 	// LAB 3: Your code here.
+  cprintf("start env_run\n");
   if (e!=curenv)
   {
     e->env_status=ENV_RUNNABLE;
@@ -536,10 +539,9 @@ env_run(struct Env *e)
     curenv->env_status=ENV_RUNNING;
     ++(curenv->env_runs);
     lcr3(PADDR(curenv->env_pgdir));
-    env_pop_tf(&curenv->env_tf);
   }
+  env_pop_tf(&curenv->env_tf);
   //__asm__ __volatile__ (...whatever...);
-	((void (*)(void)) (curenv->env_tf.tf_eip))();
   panic("I shouldn't be here\n");
 }
 

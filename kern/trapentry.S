@@ -52,4 +52,9 @@
 /*
  * Lab 3: Your code here for _alltraps
  */
+_alltraps:
+;set up the trapframe structure
+  pusha ;push whole bunch of useless things
+  pushl %es ;es reg
+  pushl $0x69 ;padding1
 
