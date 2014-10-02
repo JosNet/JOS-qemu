@@ -65,7 +65,8 @@ trap_init(void)
 {
 	extern struct Segdesc gdt[];
 
-	// LAB 3: Your code here.
+	cprintf("start trap_init\n");
+  // LAB 3: Your code here.
   int i=0;
   for (i=0; i<256; ++i)
   {

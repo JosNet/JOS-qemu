@@ -96,7 +96,20 @@ _alltraps:
   pushl $0x69 //;padding1
   pushl %ds   //;ds reg
   pushl $0x69 //;padding2
-  pushl 36(%esp) //tf number
+  pushl 40(%esp) //tf number
+  pushl 44(%esp) //error code zero if none
+  pushl 48(%esp) //old eip
+  pushl 52(%esp) //old cs
+  pushl $0x69 //padding
+  pushl 56(%esp) //old eflags
+  pushl 60(%esp) //old esp
+  pushl 64(%esp) //old ss
+  pushl $0x69 //padding
+  movw $GD_KD,%ax
+  movw %ax,%ds
+  movw %ax,%ds
+  pushl %esp
+  call trap
 
 .data
 .globl vectors
