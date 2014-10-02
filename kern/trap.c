@@ -20,6 +20,7 @@ static struct Trapframe *last_tf;
 /* Interrupt descriptor table.  (Must be built at run time because
  * shifted function addresses can't be represented in relocation records.)
  */
+extern unsigned vectors[]; //defined in trapentry.S
 struct Gatedesc idt[256] = { { 0 } };
 struct Pseudodesc idt_pd = {
 	sizeof(idt) - 1, (uint32_t) idt
@@ -68,7 +69,7 @@ trap_init(void)
   int i=0;
   for (i=0; i<256; ++i)
   {
-    SETGATE(idt[i], 0, 1
+    SETGATE(idt[i], 0, 1, vectors[i], 0);
   }
 
 	// Per-CPU setup
