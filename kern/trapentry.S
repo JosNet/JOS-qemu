@@ -99,6 +99,14 @@ better_TRAPHANDLER_NOEC(vector37,37)
 better_TRAPHANDLER_NOEC(vector38,38)
 better_TRAPHANDLER_NOEC(vector39,39)
 better_TRAPHANDLER_NOEC(vector40,40)
+better_TRAPHANDLER_NOEC(vector41,41)
+better_TRAPHANDLER_NOEC(vector42,42)
+better_TRAPHANDLER_NOEC(vector43,43)
+better_TRAPHANDLER_NOEC(vector44,44)
+better_TRAPHANDLER_NOEC(vector45,45)
+better_TRAPHANDLER_NOEC(vector46,46)
+better_TRAPHANDLER_NOEC(vector47,47)
+better_TRAPHANDLER_NOEC(vector48,48)
 
 
 /*
@@ -158,4 +166,12 @@ vectors:
   .long vector37
   .long vector38
   .long vector39
-  .long vector40 //lol syscalls
+  .long vector40
+  .long vector41
+  .long vector42
+  .long vector43
+  .long vector44
+  .long vector45
+  .long vector46
+  .long vector47
+  .long vector48 //lol syscalls

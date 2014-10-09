@@ -164,6 +164,9 @@ trap_dispatch(struct Trapframe *tf)
       monitor(tf);
       break;
     case T_SYSCALL: //invoke syscall()
+      //The system call number will go in %eax, and the arguments (up to five of them) 
+      //will go in %edx, %ecx, %ebx, %edi, and %esi, respectively
+      syscall(tf->tf_regs.reg_eax, tf->tf_regs.reg_edx, tf->tf_regs.reg_ecx, tf->tf_regs.reg_ebx, tf->tf_regs.reg_edi, tf->tf_regs.reg_esi);
       break;
     default:
       env_destroy(curenv);
