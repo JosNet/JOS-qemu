@@ -72,6 +72,8 @@ trap_init(void)
   {
     SETGATE(idt[i], 0, GD_KT, vectors[i], 0);
   }
+  SETGATE(idt[T_BRKPT], 0, GD_KT, vectors[T_BRKPT], 3); //breakpoints can be invoked from userland
+  SETGATE(idt[T_SYSCALL], 0, GD_KT, vectors[T_SYSCALL], 3); //syscalls can be invoked from userland
 
 	// Per-CPU setup
 	trap_init_percpu();
@@ -148,17 +150,34 @@ print_regs(struct PushRegs *regs)
 static void
 trap_dispatch(struct Trapframe *tf)
 {
+	if (tf->tf_cs == GD_KT)
+		panic("unhandled trap in kernel");
+	print_trapframe(tf);
 	// Handle processor exceptions.
 	// LAB 3: Your code here.
-
-	// Unexpected trap: The user process or the kernel has a bug.
+  switch (tf->tf_trapno)
+  {
+    case T_PGFLT: //call pg_handler
+      page_fault_handler(tf);
+      break;
+    case T_BRKPT: //invoke the kernel monitor!
+      monitor(tf);
+      break;
+    case T_SYSCALL: //invoke syscall()
+      break;
+    default:
+      env_destroy(curenv);
+      break;
+/*  // Unexpected trap: The user process or the kernel has a bug.
 	print_trapframe(tf);
 	if (tf->tf_cs == GD_KT)
 		panic("unhandled trap in kernel");
 	else {
 		env_destroy(curenv);
 		return;
-	}
+	}*/
+  }
+  return;
 }
 
 void
