@@ -198,7 +198,13 @@ env_setup_vm(struct Env *e)
   ++(p->pp_ref); //increase pp ref
   e->env_pgdir=page2kva(p); //get a pointer to the actual memory
   memset(e->env_pgdir, 0, PGSIZE); //clear it
-  memcpy(&e->env_pgdir[PDX(UTOP)], &kern_pgdir[PDX(UTOP)], NPDENTRIES-PDX(UTOP)); //everything >=UTOP is the same
+  //for some reason this didn't work
+  //memcpy(&e->env_pgdir[PDX(UTOP)], &kern_pgdir[PDX(UTOP)], NPDENTRIES-PDX(UTOP)); //everything >=UTOP is the same
+  //
+  for (i = PDX(UTOP); i<NPDENTRIES; ++i)
+  {
+    e->env_pgdir[i] = kern_pgdir[i];
+  }
   // UVPT maps the env's own page table read-only.
 	// Permissions: kernel R, user R
 	e->env_pgdir[PDX(UVPT)] = PADDR(e->env_pgdir) | PTE_P | PTE_U;
@@ -298,7 +304,11 @@ region_alloc(struct Env *e, void *va, size_t len)
 	  // Allocate a page for da mapping
 	  if (!(p = page_alloc(ALLOC_ZERO)))
 		  panic("region_alloc: out of memory\n");
-    page_insert(e->env_pgdir, p, (int*)start, PTE_U | PTE_W);
+    //cprintf("now page insert\n");
+    if (page_insert(e->env_pgdir, p, (int*)start, PTE_U | PTE_W)==-E_NO_MEM)
+    {
+      panic("couldn't insert page");
+    }
     start+=PGSIZE;
   }
   cprintf("region_alloc end\n");
@@ -363,13 +373,6 @@ load_icode(struct Env *e, uint8_t *binary)
 	// Now map one page for the program's initial stack
 	// at virtual address USTACKTOP - PGSIZE.
   cprintf("load_icode start\n");
-  struct PageInfo* p=NULL;
-  if (!(p=page_alloc(ALLOC_ZERO)))
-      panic("load_icode stack setup: out of memory");
-  boot_map_region(e->env_pgdir, USTACKTOP-PGSIZE, PGSIZE, page2pa(p), PTE_U | PTE_W);
-	cprintf("done boot_map_region\n");
-  lcr3(PADDR(e->env_pgdir));
-  cprintf("switched pgdir\n");
   //e->env_tf.tf_esp=USTACKTOP; //initialize the stack
   // LAB 3: Your code here.
   struct Elf* elf=(struct Elf*)binary;
@@ -377,8 +380,11 @@ load_icode(struct Env *e, uint8_t *binary)
   if (elf->e_magic != ELF_MAGIC) //do you even majic bro?
     panic("load_icode: elf magic is broke");
   cprintf("found valid elf\n");
-  ph=(struct Proghdr*)((uint8_t*)elf + elf->e_phoff); //pointer to first program header
+  ph=(struct Proghdr*)(binary + elf->e_phoff); //pointer to first program header
   eph=ph+elf->e_phnum; //pointer to last program header
+  lcr3(PADDR(e->env_pgdir));
+  cprintf("switched pgdir\n");
+  region_alloc(e, (void *)(USTACKTOP-PGSIZE), PGSIZE);
   for (; ph<eph; ++ph)
   {
     //loop through every program segment and only load the right types
@@ -386,11 +392,9 @@ load_icode(struct Env *e, uint8_t *binary)
     {
       cprintf("correct ph type\n");
       //do that thing
-      int va=ph->p_va;
-      int size=ph->p_memsz;
-      region_alloc(e, (void*)va, size);
-      memcpy((int*)va, binary+ph->p_offset, ph->p_filesz); //copy over program
-      memset((int*)(ph->p_va+ph->p_filesz), 0, ph->p_memsz-ph->p_filesz); //zero remaining bytes
+      region_alloc(e, (void*)ph->p_va, ph->p_memsz);
+      memcpy((void*)ph->p_va, binary+ph->p_offset, ph->p_filesz); //copy over program
+      memset((void*)(ph->p_va+ph->p_filesz), 0, ph->p_memsz-ph->p_filesz); //zero remaining bytes
       cprintf("loaded ph:%p\n", ph);
     }
   }

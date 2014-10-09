@@ -152,6 +152,7 @@ trap_dispatch(struct Trapframe *tf)
 {
 	// Handle processor exceptions.
 	// LAB 3: Your code here.
+  //cprintf("trap no %d\n", tf->tf_trapno);
   switch (tf->tf_trapno)
   {
     case T_PGFLT: //call pg_handler
@@ -226,14 +227,19 @@ void
 page_fault_handler(struct Trapframe *tf)
 {
 	uint32_t fault_va;
-
 	// Read processor's CR2 register to find the faulting address
 	fault_va = rcr2();
+ // cprintf("pf handler\n");
 
 	// Handle kernel-mode page faults.
 
 	// LAB 3: Your code here.
-
+  //
+  if (tf->tf_cs == GD_KT)
+  {
+    print_trapframe(tf);
+    panic("kernel page fault va %08x ip %08x env %x\n", fault_va, tf->tf_eip, curenv->env_id);
+  }
 	// We've already handled kernel-mode exceptions, so if we get here,
 	// the page fault happened in user mode.
 
