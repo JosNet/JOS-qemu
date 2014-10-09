@@ -590,7 +590,6 @@ user_mem_check(struct Env *env, const void *va, size_t len, int perm)
   perm |= PTE_P;
   for (; start<end; ++start)
   {
-    cprintf("va %d\n", start);
     if (start>=ULIM)
     {
       user_mem_check_addr=start;

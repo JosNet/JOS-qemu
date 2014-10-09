@@ -114,12 +114,12 @@ better_TRAPHANDLER_NOEC(vector48,48)
  */
 _alltraps:
 //;set up the trapframe structure
-  pushl %es
   pushl %ds
+  pushl %es
   pushal
   movw $GD_KD,%ax
   movw %ax,%ds
-  movw %ax,%ds
+  movw %ax,%es
   pushl %esp
   call trap
 

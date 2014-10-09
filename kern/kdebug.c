@@ -139,16 +139,10 @@ debuginfo_eip(uintptr_t addr, struct Eipdebuginfo *info)
 		// USTABDATA.
 		const struct UserStabData *usd = (const struct UserStabData *) USTABDATA;
 
-    struct Env* env=NULL;
-    envid_t envid=sys_getenvid();
-    envid2env(envid, &env, false);
-    if (env==NULL)
-      panic("debuginfo: env not valid");
-
 		// Make sure this memory is valid.
 		// Return -1 if it is not.  Hint: Call user_mem_check.
 		// LAB 3: Your code here.
-    if (user_mem_check(env, usd, sizeof(struct UserStabData), PTE_U)<0)
+    if (user_mem_check(curenv, usd, sizeof(struct UserStabData), PTE_U)<0)
       return -1;
 
 		stabs = usd->stabs;
@@ -158,8 +152,10 @@ debuginfo_eip(uintptr_t addr, struct Eipdebuginfo *info)
 
 		// Make sure the STABS and string table memory is valid.
 		// LAB 3: Your code here.
-    user_mem_assert(env, stabs, (int)(stab_end-stabs), PTE_U);
-    user_mem_assert(env, stabstr, (int)(stabstr_end-stabstr), PTE_U);
+    if (user_mem_check(curenv, stabs, (int)(stab_end-stabs), PTE_U)<0)
+      return -1;
+    if (user_mem_check(curenv, stabstr, (int)(stabstr_end-stabstr), PTE_U)<0)
+      return -1;
 	}
 
 	// String table validity checks
