@@ -1,5 +1,5 @@
-/* See COPYRIGHT for copyright information. */
 
+/* See COPYRIGHT for copyright information. */
 #ifndef JOS_KERN_PMAP_H
 #define JOS_KERN_PMAP_H
 #ifndef JOS_KERNEL
@@ -59,7 +59,10 @@ void	page_free(struct PageInfo *pp);
 int	page_insert(pde_t *pgdir, struct PageInfo *pp, void *va, int perm);
 void	page_remove(pde_t *pgdir, void *va);
 struct PageInfo *page_lookup(pde_t *pgdir, void *va, pte_t **pte_store);
+struct PageInfo *user_page_lookup(void *va, pte_t **pte_store);
 void	page_decref(struct PageInfo *pp);
+unsigned int pa2va(physaddr_t pa);
+void boot_map_region(pde_t *pgdir, uintptr_t va, size_t size, physaddr_t pa, int perm);
 
 void	tlb_invalidate(pde_t *pgdir, void *va);
 

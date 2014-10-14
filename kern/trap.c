@@ -25,6 +25,7 @@ static struct Trapframe *last_tf;
 /* Interrupt descriptor table.  (Must be built at run time because
  * shifted function addresses can't be represented in relocation records.)
  */
+extern unsigned vectors[]; //defined in trapentry.S
 struct Gatedesc idt[256] = { { 0 } };
 struct Pseudodesc idt_pd = {
 	sizeof(idt) - 1, (uint32_t) idt
@@ -71,9 +72,17 @@ trap_init(void)
 {
 	extern struct Segdesc gdt[];
 
-	// LAB 3: Your code here.
+	cprintf("start trap_init\n");
+  // LAB 3: Your code here.
+  int i=0;
+  for (i=0; i<256; ++i)
+  {
+    SETGATE(idt[i], 0, GD_KT, vectors[i], 0);
+  }
+  SETGATE(idt[T_BRKPT], 0, GD_KT, vectors[T_BRKPT], 3); //breakpoints can be invoked from userland
+  SETGATE(idt[T_SYSCALL], 0, GD_KT, vectors[T_SYSCALL], 3); //syscalls can be invoked from userland
 
-	// Per-CPU setup 
+	// Per-CPU setup
 	trap_init_percpu();
 }
 
@@ -171,8 +180,6 @@ print_regs(struct PushRegs *regs)
 static void
 trap_dispatch(struct Trapframe *tf)
 {
-	// Handle processor exceptions.
-	// LAB 3: Your code here.
 
 	// Handle spurious interrupts
 	// The hardware sometimes raises these because of noise on the
@@ -187,14 +194,35 @@ trap_dispatch(struct Trapframe *tf)
 	// interrupt using lapic_eoi() before calling the scheduler!
 	// LAB 4: Your code here.
 
-	// Unexpected trap: The user process or the kernel has a bug.
+  switch (tf->tf_trapno)
+  {
+    case T_PGFLT: //call pg_handler
+      page_fault_handler(tf);
+      return;
+      break;
+    case T_BRKPT: //invoke the kernel monitor!
+      monitor(tf);
+      return;
+      break;
+    case T_SYSCALL: //invoke syscall()
+      //The system call number will go in %eax, and the arguments (up to five of them) 
+      //will go in %edx, %ecx, %ebx, %edi, and %esi, respectively
+      tf->tf_regs.reg_eax=syscall(tf->tf_regs.reg_eax, tf->tf_regs.reg_edx, tf->tf_regs.reg_ecx, tf->tf_regs.reg_ebx, tf->tf_regs.reg_edi, tf->tf_regs.reg_esi);
+      return;
+      break;
+    //default:
+    //  env_destroy(curenv);
+    //  break;
+  }
+  // Unexpected trap: The user process or the kernel has a bug.
 	print_trapframe(tf);
 	if (tf->tf_cs == GD_KT)
 		panic("unhandled trap in kernel");
 	else {
 		env_destroy(curenv);
 		return;
-	}
+  }
+  return;
 }
 
 void
@@ -261,14 +289,19 @@ void
 page_fault_handler(struct Trapframe *tf)
 {
 	uint32_t fault_va;
-
 	// Read processor's CR2 register to find the faulting address
 	fault_va = rcr2();
+ // cprintf("pf handler\n");
 
 	// Handle kernel-mode page faults.
 
 	// LAB 3: Your code here.
-
+  //
+  if (tf->tf_cs == GD_KT)
+  {
+    print_trapframe(tf);
+    panic("kernel page fault va %08x ip %08x env %x\n", fault_va, tf->tf_eip, curenv->env_id);
+  }
 	// We've already handled kernel-mode exceptions, so if we get here,
 	// the page fault happened in user mode.
 
