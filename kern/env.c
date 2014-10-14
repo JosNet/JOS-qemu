@@ -127,11 +127,11 @@ env_init(void)
   while (i>=0)
   {
     //mark envs[i] as free
-    struct Env* curenv=&envs[i];
-    curenv->env_id=0;
+    struct Env* curenv2=&envs[i];
+    curenv2->env_id=0;
     //set up the link
-    curenv->env_link=env_free_list;
-    env_free_list=curenv;
+    curenv2->env_link=env_free_list;
+    env_free_list=curenv2;
     --i;
   }
 	// Per-CPU part of the initialization
