@@ -117,10 +117,10 @@ trap_init_percpu(void)
   int i=cpunum();
   thiscpu->cpu_ts.ts_esp0=KSTACKTOP-i*(KSTKSIZE+KSTKGAP);
   thiscpu->cpu_ts.ts_ss0=GD_KD;
-  gdt[(GD_TSS0>>3)+i]=SEG16(STS_T32A, (uint32_t) (&thiscpu->cpu_ts), sizeof(struct Taskstate)-1, 0);
+  gdt[(GD_TSS0 >> 3)+i]=SEG16(STS_T32A, (uint32_t) (&thiscpu->cpu_ts), sizeof(struct Taskstate)-1, 0);
 	gdt[(GD_TSS0 >> 3)+i].sd_s = 0;
 	cprintf("cpu%d ltr\n", i);
-  ltr(GD_TSS0+i);
+  ltr(((GD_TSS0 >> 3)+i)<<3);
   /*
 	// Setup a TSS so that we get the right stack
 	// when we trap to the kernel.
@@ -203,6 +203,10 @@ trap_dispatch(struct Trapframe *tf)
 	// interrupt using lapic_eoi() before calling the scheduler!
 	// LAB 4: Your code here.
 
+  if ((tf->tf_cs&3)==3) //trapped from user mode
+  {
+    lock_kernel();
+  }
   switch (tf->tf_trapno)
   {
     case T_PGFLT: //call pg_handler
