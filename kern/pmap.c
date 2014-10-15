@@ -243,7 +243,8 @@ mem_init(void)
 
 	check_page_free_list(0);
 
-	// entry.S set the really important flags in cr0 (including enabling
+	cprintf("check pgfree list good\n");
+  // entry.S set the really important flags in cr0 (including enabling
 	// paging).  Here we configure the rest of the flags that we care about.
 	cr0 = rcr0();
 	cr0 |= CR0_PE|CR0_PG|CR0_AM|CR0_WP|CR0_NE|CR0_MP;
@@ -327,6 +328,12 @@ page_init(void)
       continue;
     }
     if (page2pa(&pages[i])>=0x10000 && page2pa(&pages[i])<PADDR(boot_alloc(0)))
+    {
+      pages[i].pp_ref=1;
+      pages[i].pp_link=NULL;
+      continue;
+    }
+    if (page2pa(&pages[i])==ROUNDDOWN(MPENTRY_PADDR, PGSIZE))
     {
       pages[i].pp_ref=1;
       pages[i].pp_link=NULL;
@@ -626,7 +633,15 @@ mmio_map_region(physaddr_t pa, size_t size)
 	// Hint: The staff solution uses boot_map_region.
 	//
 	// Your code here:
-	panic("mmio_map_region not implemented");
+  int realsize=ROUNDUP(size, PGSIZE);
+  if (size>realsize)
+    panic("overflow");
+  int oldbase=base;
+  if (base+realsize>=MMIOLIM)
+    panic("mmio_map_region: would overflow MMIOLIM");
+  boot_map_region(kern_pgdir, base, realsize, pa, PTE_PCD|PTE_PWT|PTE_W);
+	base+=realsize;
+  return (void*)oldbase;
 }
 
 static uintptr_t user_mem_check_addr;
