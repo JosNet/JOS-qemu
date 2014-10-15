@@ -427,12 +427,12 @@ void
 env_create(uint8_t *binary, enum EnvType type)
 {
 	// LAB 3: Your code here.
-  cprintf("start env_create\n");
+  //cprintf("start env_create\n");
   struct Env* e=NULL;
   env_alloc(&e, 0);
   e->env_type=type;
   load_icode(e, binary);
-  cprintf("end env_create\n");
+  //cprintf("end env_create\n");
 }
 
 //
@@ -486,6 +486,7 @@ env_free(struct Env *e)
 	e->env_status = ENV_FREE;
 	e->env_link = env_free_list;
 	env_free_list = e;
+  cprintf("env free done\n");
 }
 
 //
@@ -562,7 +563,7 @@ env_run(struct Env *e)
 	//	e->env_tf to sensible values.
 
 	// LAB 3: Your code here.
-  cprintf("start env_run\n");
+  //cprintf("start env_run\n");
   if (e!=curenv)
   {
     e->env_status=ENV_RUNNABLE;
@@ -574,6 +575,6 @@ env_run(struct Env *e)
   unlock_kernel();
   env_pop_tf(&curenv->env_tf);
   //__asm__ __volatile__ (...whatever...);
-  panic("I shouldn't be here\n");
+  panic("env_run screwed up");
 }
 

@@ -203,10 +203,6 @@ trap_dispatch(struct Trapframe *tf)
 	// interrupt using lapic_eoi() before calling the scheduler!
 	// LAB 4: Your code here.
 
-  if ((tf->tf_cs&3)==3) //trapped from user mode
-  {
-    lock_kernel();
-  }
   switch (tf->tf_trapno)
   {
     case T_PGFLT: //call pg_handler
@@ -264,7 +260,8 @@ trap(struct Trapframe *tf)
 		// Acquire the big kernel lock before doing any
 		// serious kernel work.
 		// LAB 4: Your code here.
-		assert(curenv);
+		lock_kernel();
+    assert(curenv);
 
 		// Garbage collect if current enviroment is a zombie
 		if (curenv->env_status == ENV_DYING) {
