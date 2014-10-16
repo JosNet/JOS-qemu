@@ -29,71 +29,23 @@ sched_yield(void)
 	// below to halt the cpu.
 
 	// LAB 4: Your code here.
-  /*
-  int envid=(ENVX(curenv->env_id)+1) % (NENV); //go to zero if overflow
-  while ((envid % NENV) != curenv->env_id)
-  {
-    struct Env* env=&envs[envid % NENV];
-    if (env->env_status==ENV_RUNNABLE)
-    {
-    cprintf("next env: %d\n", envid%NENV);
-      env_run(env);
-    }
-    ++envid;
-  }
- */
   cprintf("in scheduler\n");
-  int nextenvid=0;
-  if (curenv!=NULL)
-    nextenvid=ENVX(curenv->env_id);
-  if (nextenvid==(NENV-1))
-    nextenvid=0;
-  else
-    ++nextenvid;
-  int count=0;
-  while (count<NENV && (nextenvid % NENV)!=ENVX(curenv->env_id))
-  {
-    struct Env* env=&envs[nextenvid % NENV];
-    if (env->env_status==ENV_RUNNABLE)
-    {
-      cprintf("next env: %d\n", nextenvid%NENV);
-      env_run(env);
+  idle = thiscpu->cpu_env;
+  int startenvid = (idle != NULL) ? ENVX(idle->env_id) : 0;
+  cprintf("curenv id %d\n", startenvid);
+  int i = startenvid+1;
+  for ( ; i != startenvid; i = (i+1) % NENV)
+    //cprintf("env id %d\n", i);
+    if (envs[i].env_status == ENV_RUNNABLE){
+      cprintf("running %d\n", i);
+      env_run(&envs[i]);
+      return;
     }
-    ++nextenvid;
-    ++count;
+  if (idle && idle->env_status == ENV_RUNNING){
+    cprintf("running the same env\n");
+    env_run(idle);
+    return;
   }
-  /*struct Env* lastenv=curenv;
-  if (lastenv==NULL)
-    lastenv=envs;
-  else if (lastenv==&envs[NENV-1])
-    lastenv=envs;
-  else
-    ++lastenv;
-  int count=0;
-  while (lastenv!=curenv && count<NENV)
-  {
-    if (lastenv==&envs[NENV-1])
-    {
-      //if we get to the end of the list
-      lastenv=envs;
-      continue;
-    }
-    if (lastenv->env_status==ENV_RUNNABLE)
-    {
-      cprintf("running env %d\n", lastenv->env_id);
-      env_run(lastenv);
-    }
-    ++lastenv;
-    ++count;
-  }
-  */
-  //no available envs, check if curenv can still go more
-  if (curenv->env_status==ENV_RUNNING)
-  {
-    cprintf("back to same env\n");
-    env_run(curenv);
-  }
-
   cprintf("halting\n");
 	// sched_halt never returns
 	sched_halt();
@@ -113,7 +65,10 @@ sched_halt(void)
 		if ((envs[i].env_status == ENV_RUNNABLE ||
 		     envs[i].env_status == ENV_RUNNING ||
 		     envs[i].env_status == ENV_DYING))
-			break;
+    {
+      cprintf("env %d can still run\n", i);
+      break;
+    }
 	}
 	if (i == NENV) {
 		cprintf("No runnable environments in the system!\n");

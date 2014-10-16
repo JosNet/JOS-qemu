@@ -117,10 +117,10 @@ trap_init_percpu(void)
   int i=cpunum();
   thiscpu->cpu_ts.ts_esp0=KSTACKTOP-i*(KSTKSIZE+KSTKGAP);
   thiscpu->cpu_ts.ts_ss0=GD_KD;
-  gdt[(GD_TSS0 >> 3)+i]=SEG16(STS_T32A, (uint32_t) (&thiscpu->cpu_ts), sizeof(struct Taskstate)-1, 0);
+  gdt[(GD_TSS0 >> 3)+i]=SEG16(STS_T32A, (uint32_t) (&thiscpu->cpu_ts), sizeof(struct Taskstate), 0);
 	gdt[(GD_TSS0 >> 3)+i].sd_s = 0;
 	cprintf("cpu%d ltr\n", i);
-  ltr(((GD_TSS0 >> 3)+i)<<3);
+  ltr(GD_TSS0 + (i<<3));
   /*
 	// Setup a TSS so that we get the right stack
 	// when we trap to the kernel.
@@ -193,11 +193,6 @@ trap_dispatch(struct Trapframe *tf)
 	// Handle spurious interrupts
 	// The hardware sometimes raises these because of noise on the
 	// IRQ line or other reasons. We don't care.
-	if (tf->tf_trapno == IRQ_OFFSET + IRQ_SPURIOUS) {
-		cprintf("Spurious interrupt on irq 7\n");
-		print_trapframe(tf);
-		return;
-	}
 
 	// Handle clock interrupts. Don't forget to acknowledge the
 	// interrupt using lapic_eoi() before calling the scheduler!
@@ -213,12 +208,21 @@ trap_dispatch(struct Trapframe *tf)
       monitor(tf);
       return;
       break;
+    /*case IRQ_OFFSET+IRQ_TIMER:
+      lapic_eoi();
+      sched_yield();
+      return;
+      break;*/
     case T_SYSCALL: //invoke syscall()
       //The system call number will go in %eax, and the arguments (up to five of them) 
       //will go in %edx, %ecx, %ebx, %edi, and %esi, respectively
       tf->tf_regs.reg_eax=syscall(tf->tf_regs.reg_eax, tf->tf_regs.reg_edx, tf->tf_regs.reg_ecx, tf->tf_regs.reg_ebx, tf->tf_regs.reg_edi, tf->tf_regs.reg_esi);
       return;
       break;
+    case IRQ_OFFSET+IRQ_SPURIOUS:
+		  cprintf("Spurious interrupt on irq 7\n");
+		  print_trapframe(tf);
+      return;
     //default:
     //  env_destroy(curenv);
     //  break;

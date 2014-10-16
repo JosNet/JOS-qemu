@@ -127,11 +127,12 @@ env_init(void)
   while (i>=0)
   {
     //mark envs[i] as free
-    struct Env* curenv2=&envs[i];
-    curenv2->env_id=0;
+    struct Env* env=&envs[i];
+    //env->env_id=0;
+    env->env_status=ENV_FREE;
     //set up the link
-    curenv2->env_link=env_free_list;
-    env_free_list=curenv2;
+    env->env_link=env_free_list;
+    env_free_list=env;
     --i;
   }
 	// Per-CPU part of the initialization
@@ -201,7 +202,7 @@ env_setup_vm(struct Env *e)
 	// LAB 3: Your code here.
   ++(p->pp_ref); //increase pp ref
   e->env_pgdir=page2kva(p); //get a pointer to the actual memory
-  memset(e->env_pgdir, 0, PGSIZE); //clear it
+//  memset(e->env_pgdir, 0, PGSIZE); //clear it
   //for some reason this didn't work
   //memcpy(&e->env_pgdir[PDX(UTOP)], &kern_pgdir[PDX(UTOP)], NPDENTRIES-PDX(UTOP)); //everything >=UTOP is the same
   //
@@ -429,7 +430,10 @@ env_create(uint8_t *binary, enum EnvType type)
 	// LAB 3: Your code here.
   //cprintf("start env_create\n");
   struct Env* e=NULL;
-  env_alloc(&e, 0);
+  if(env_alloc(&e, 0)<0)
+  {
+    panic("env alloc messed up");
+  }
   e->env_type=type;
   load_icode(e, binary);
   //cprintf("end env_create\n");
