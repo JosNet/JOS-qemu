@@ -281,7 +281,7 @@ mem_init_mp(void)
   for (i=0; i<NCPU; ++i)
   {
     int kstacktop_i=KSTACKTOP-i*(KSTKSIZE+KSTKGAP);
-    boot_map_region(kern_pgdir, kstacktop_i-KSTKSIZE, ROUNDUP(KSTKSIZE, PGSIZE), PADDR(percpu_kstacks[i]), PTE_W|PTE_P);
+    boot_map_region(kern_pgdir, kstacktop_i-KSTKSIZE, KSTKSIZE, PADDR(percpu_kstacks[i]), PTE_W|PTE_P);
   }
 }
 
@@ -338,8 +338,9 @@ page_init(void)
       pages[i].pp_link=NULL;
       continue;
     }
-    if (page2pa(&pages[i])==ROUNDDOWN(MPENTRY_PADDR, PGSIZE))
+    if (page2pa(&pages[i])==MPENTRY_PADDR)
     {
+      cprintf("skipping mpentry\n");
       pages[i].pp_ref=1;
       pages[i].pp_link=NULL;
       continue;
@@ -638,14 +639,12 @@ mmio_map_region(physaddr_t pa, size_t size)
 	// Hint: The staff solution uses boot_map_region.
 	//
 	// Your code here:
-  int realsize=ROUNDUP(size, PGSIZE);
-  if (size>realsize)
-    panic("overflow");
-  int oldbase=base;
-  if (base+realsize>=MMIOLIM)
+  size=ROUNDUP(size, PGSIZE);
+  uintptr_t oldbase=base;
+  if (base+size>=MMIOLIM)
     panic("mmio_map_region: would overflow MMIOLIM");
-  boot_map_region(kern_pgdir, base, realsize, pa, PTE_PCD|PTE_PWT|PTE_W);
-	base+=realsize;
+  boot_map_region(kern_pgdir, base, size, pa, PTE_PCD|PTE_PWT|PTE_W);
+	base+=size;
   return (void*)oldbase;
 }
 

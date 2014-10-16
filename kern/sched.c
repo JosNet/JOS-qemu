@@ -29,29 +29,30 @@ sched_yield(void)
 	// below to halt the cpu.
 
 	// LAB 4: Your code here.
-  cprintf("in scheduler\n");
-/*  idle = thiscpu->cpu_env;
+  idle = thiscpu->cpu_env;
   int startenvid = (idle != NULL) ? ENVX(idle->env_id) : 0;
-  cprintf("curenv id %d\n", startenvid);
   int i = startenvid+1;
   for ( ; i != startenvid; i = (i+1) % NENV)
     //cprintf("env id: %d status: %d\n", i, envs[i].env_status);
-    if (envs[i].env_status == 2){
-      cprintf("running %d\n", i);
+    if (envs[i].env_status == ENV_RUNNABLE){
       env_run(&envs[i]);
       return;
     }
-  if (idle && idle->env_status == 3){
-    cprintf("running the same env\n");
+  if (startenvid==0 && &envs[0] && envs[0].env_status==ENV_RUNNABLE)
+  {
+    env_run(&envs[0]);
+    return;
+  }
+  if (idle && (idle->env_status == ENV_RUNNING || idle->env_status==ENV_RUNNABLE)){
     env_run(idle);
     return;
-  }*/
+  }
 
   //for testing
-  int i;
+  /*int i;
   for (i=0; i<NENV; ++i)
   {
-    if (envs[i].env_status==ENV_RUNNABLE)
+    if (envs[i].env_status==ENV_RUNNABLE && &envs[i])
     {
       cprintf("running %d\n", i);
       env_run(&envs[i]);
@@ -62,7 +63,7 @@ sched_yield(void)
     cprintf("back to same env\n");
     env_run(curenv);
   }
-  cprintf("halting\n");
+  */
 	// sched_halt never returns
 	sched_halt();
 }

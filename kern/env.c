@@ -571,10 +571,11 @@ env_run(struct Env *e)
   if (e!=curenv)
   {
     //e->env_status=ENV_RUNNABLE;
-    if (curenv->env_status==ENV_RUNNING && curenv)
+    if (curenv && curenv->env_status==ENV_RUNNING)
       curenv->env_status=ENV_RUNNABLE;
     curenv=e;
     curenv->env_status=ENV_RUNNING;
+    curenv->env_cpunum=cpunum();
     ++(curenv->env_runs);
     lcr3(PADDR(curenv->env_pgdir));
   }

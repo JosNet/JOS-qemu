@@ -68,7 +68,6 @@ sys_env_destroy(envid_t envid)
 static void
 sys_yield(void)
 {
-	cprintf("userland yield\n");
   sched_yield();
 }
 
@@ -86,7 +85,14 @@ sys_exofork(void)
 	// will appear to return 0.
 
 	// LAB 4: Your code here.
-	panic("sys_exofork not implemented");
+	struct Env* newenv=NULL;
+  int retval=env_alloc(&newenv, curenv->env_id);
+  if (retval<0)
+    return retval;
+  newenv->env_status==ENV_NOT_RUNNABLE;
+  newenv->env_tf=curenv->env_tf; //copy registers
+  newenv->env_tf.tf_regs.reg_eax=0;
+  return newenv->env_id;
 }
 
 // Set envid's env_status to status, which must be ENV_RUNNABLE
@@ -106,7 +112,13 @@ sys_env_set_status(envid_t envid, int status)
 	// envid's status.
 
 	// LAB 4: Your code here.
-	panic("sys_env_set_status not implemented");
+  if (status!=ENV_RUNNABLE || status!=ENV_NOT_RUNNABLE)
+    return -E_INVAL;
+  struct Env* env=NULL;
+  envid2env(envid, &env, 1);
+  if (!env)
+    return -E_BAD_ENV;
+  env->env_status=status;
 }
 
 // Set the page fault upcall for 'envid' by modifying the corresponding struct
@@ -151,7 +163,29 @@ sys_page_alloc(envid_t envid, void *va, int perm)
 	//   allocated!
 
 	// LAB 4: Your code here.
-	panic("sys_page_alloc not implemented");
+	if ((int)va>=UTOP || ((int)va%PGSIZE)!=0)
+    return -E_INVAL;
+  struct PageInfo* page=page_alloc(ALLOC_ZERO);
+  if (!page)
+    return -E_NO_MEM;
+  int retval=0;
+  struct Env* env=NULL;
+  envid2env(envid, &env, 1);
+  if (!env)
+    return -E_BAD_ENV;
+  retval=page_insert(env->env_pgdir, page, va, perm);
+  if (retval<0)
+  {
+    //page insert failed
+    page_free(page);
+    return retval;
+  }
+  else
+  {
+    //all good
+    return 0;
+  }
+  panic("sys_page_alloc not implemented");
 }
 
 // Map the page of memory at 'srcva' in srcenvid's address space
@@ -293,6 +327,5 @@ syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, 
     default:
 		return -E_NO_SYS;
 	}
-  return -E_NO_SYS;
 }
 
