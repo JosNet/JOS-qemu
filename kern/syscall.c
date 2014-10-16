@@ -68,7 +68,8 @@ sys_env_destroy(envid_t envid)
 static void
 sys_yield(void)
 {
-	sched_yield();
+	cprintf("userland yield\n");
+  sched_yield();
 }
 
 // Allocate a new environment.

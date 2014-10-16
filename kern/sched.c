@@ -35,13 +35,13 @@ sched_yield(void)
   cprintf("curenv id %d\n", startenvid);
   int i = startenvid+1;
   for ( ; i != startenvid; i = (i+1) % NENV)
-    //cprintf("env id %d\n", i);
-    if (envs[i].env_status == ENV_RUNNABLE){
+    //cprintf("env id: %d status: %d\n", i, envs[i].env_status);
+    if (envs[i].env_status == 2){
       cprintf("running %d\n", i);
       env_run(&envs[i]);
       return;
     }
-  if (idle && idle->env_status == ENV_RUNNING){
+  if (idle && idle->env_status == 3){
     cprintf("running the same env\n");
     env_run(idle);
     return;
