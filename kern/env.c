@@ -570,7 +570,9 @@ env_run(struct Env *e)
   //cprintf("start env_run\n");
   if (e!=curenv)
   {
-    e->env_status=ENV_RUNNABLE;
+    //e->env_status=ENV_RUNNABLE;
+    if (curenv->env_status==ENV_RUNNING && curenv)
+      curenv->env_status=ENV_RUNNABLE;
     curenv=e;
     curenv->env_status=ENV_RUNNING;
     ++(curenv->env_runs);

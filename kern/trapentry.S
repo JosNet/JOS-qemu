@@ -108,6 +108,12 @@ better_TRAPHANDLER_NOEC(vector45,45)
 better_TRAPHANDLER_NOEC(vector46,46)
 better_TRAPHANDLER_NOEC(vector47,47)
 better_TRAPHANDLER_NOEC(vector48,48)
+better_TRAPHANDLER_NOEC(vector49,49)
+better_TRAPHANDLER_NOEC(vector50,50)
+better_TRAPHANDLER_NOEC(vector51,51)
+better_TRAPHANDLER_NOEC(vector52,52)
+better_TRAPHANDLER_NOEC(vector53,53)
+better_TRAPHANDLER_NOEC(vector54,54)
 
 
 /*
@@ -116,6 +122,7 @@ better_TRAPHANDLER_NOEC(vector48,48)
 _alltraps:
 //;set up the trapframe structure
   pushl %ds
+  //pushl $0x69 //padding
   pushl %es
   pushal
   movw $GD_KD,%ax
@@ -176,3 +183,9 @@ vectors:
   .long vector46
   .long vector47
   .long vector48 //lol syscalls
+  .long vector49
+  .long vector50
+  .long vector51
+  .long vector52
+  .long vector53
+  .long vector54
