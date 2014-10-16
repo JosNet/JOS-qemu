@@ -430,7 +430,7 @@ env_create(uint8_t *binary, enum EnvType type)
 	// LAB 3: Your code here.
   //cprintf("start env_create\n");
   struct Env* e=NULL;
-  if(env_alloc(&e, 0)<0)
+  if(env_alloc(&e, 0)!=0)
   {
     panic("env alloc messed up");
   }
