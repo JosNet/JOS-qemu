@@ -349,10 +349,30 @@ page_fault_handler(struct Trapframe *tf)
 
 	// LAB 4: Your code here.
 
+  if (curenv->env_pgfault_upcall==NULL)
+  {
 	// Destroy the environment that caused the fault.
-	cprintf("[%08x] user fault va %08x ip %08x\n",
-		curenv->env_id, fault_va, tf->tf_eip);
-	print_trapframe(tf);
-	env_destroy(curenv);
+	  cprintf("[%08x] user fault va %08x ip %08x\n", curenv->env_id, fault_va, tf->tf_eip);
+	  print_trapframe(tf);
+	  env_destroy(curenv);
+  }
+  int stackspot=UXSTACKTOP-sizeof(struct UTrapframe);
+  if (tf->tf_esp>=(UXSTACKTOP-PGSIZE) && tf->tf_esp<=(UXSTACKTOP-1))
+  {
+    //recursive user page fault. push an empty 32bit word (int) first
+    stackspot=tf->tf_esp-4-sizeof(struct UTrapframe);
+  }
+  struct UTrapframe utf;
+  utf.utf_fault_va=fault_va;
+  utf.utf_err=tf->tf_err;
+  utf.utf_regs=tf->tf_regs;
+  utf.utf_eip=tf->tf_eip;
+  utf.utf_eflags=tf->tf_eflags;
+  utf.utf_esp=tf->tf_esp;
+  user_mem_assert(curenv, (void*)stackspot, sizeof(struct UTrapframe), PTE_W);
+  memcpy((void*)(stackspot), &utf, sizeof(utf)); //push utf onto UXSTACK
+  tf->tf_eip=curenv->env_pgfault_upcall;
+  tf->tf_esp=stackspot;
+  env_run(curenv);
 }
 
