@@ -356,6 +356,7 @@ page_fault_handler(struct Trapframe *tf)
 	  print_trapframe(tf);
 	  env_destroy(curenv);
   }
+  cprintf("setting up UXSTACK\n");
   int stackspot=UXSTACKTOP-sizeof(struct UTrapframe);
   if (tf->tf_esp>=(UXSTACKTOP-PGSIZE) && tf->tf_esp<=(UXSTACKTOP-1))
   {
@@ -370,9 +371,11 @@ page_fault_handler(struct Trapframe *tf)
   utf.utf_eflags=tf->tf_eflags;
   utf.utf_esp=tf->tf_esp;
   user_mem_assert(curenv, (void*)stackspot, sizeof(struct UTrapframe), PTE_W);
-  memcpy((void*)(stackspot), &utf, sizeof(utf)); //push utf onto UXSTACK
-  tf->tf_eip=curenv->env_pgfault_upcall;
+  *((struct UTrapframe*)stackspot)=utf;
+  //memcpy((void*)(stackspot), &utf, sizeof(utf)); //push utf onto UXSTACK
+  tf->tf_eip=(int)curenv->env_pgfault_upcall;
   tf->tf_esp=stackspot;
+  cprintf("env run user trap\n");
   env_run(curenv);
 }
 
