@@ -23,8 +23,8 @@ pgfault(struct UTrapframe *utf)
 	// Hint:
 	//   Use the read-only page table mappings at uvpt
 	//   (see <inc/memlayout.h>).
-
 	// LAB 4: Your code here.
+  //pte_t* page=uvpt[PGNUM(addr)];
 
 	// Allocate a new page, map it at a temporary location (PFTEMP),
 	// copy the data from the old page to the new page, then move the new
@@ -78,7 +78,19 @@ envid_t
 fork(void)
 {
 	// LAB 4: Your code here.
-	panic("fork not implemented");
+	set_pgfault_handler(pgfault);
+  int child=sys_exofork();
+  if (child<0)
+    panic("fork: exofork failed");
+  int i;
+  for (i=0; i<PGNUM(UTOP); i)
+  {
+    if ((uvpt[PGNUM(i)] & (PTE_W|PTE_COW)) && i!=PGNUM(UXSTACKTOP-PGSIZE))
+    {
+      //duppage
+    }
+  }
+  panic("fork not implemented");
 }
 
 // Challenge!
