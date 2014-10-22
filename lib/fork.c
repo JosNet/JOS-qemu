@@ -24,7 +24,12 @@ pgfault(struct UTrapframe *utf)
 	//   Use the read-only page table mappings at uvpt
 	//   (see <inc/memlayout.h>).
 	// LAB 4: Your code here.
-  //pte_t* page=uvpt[PGNUM(addr)];
+  pte_t* pte=&uvpt[PGNUM(addr)]; //grab the pte
+  //if not a write OR not a COW page
+  if (!(err & 0x2) || !(*pte & PTE_COW))
+  {
+    panic("fork COW invalid err");
+  }
 
 	// Allocate a new page, map it at a temporary location (PFTEMP),
 	// copy the data from the old page to the new page, then move the new
@@ -34,7 +39,10 @@ pgfault(struct UTrapframe *utf)
 
 	// LAB 4: Your code here.
 
-	panic("pgfault not implemented");
+	sys_page_alloc(sys_getenvid(), PFTEMP, PTE_U); //make new page at PFTEMP
+  memcpy(PFTEMP,addr,PGSIZE); //copy COW data into it
+  sys_page_map(sys_getenvid(), PFTEMP, sys_getenvid(), addr, PTE_W); //map temp page at addr
+  sys_page_unmap(sys_getenvid(), PFTEMP); //unmap temp page
 }
 
 //
@@ -54,8 +62,15 @@ duppage(envid_t envid, unsigned pn)
 	int r;
 
 	// LAB 4: Your code here.
-	panic("duppage not implemented");
-	return 0;
+	int address=pn*PGSIZE;
+  pte_t* pte=&uvpt[pn];
+  if (*pte & (PTE_COW|PTE_W))
+    r=sys_page_map(sys_getenvid(), (void*)address, envid, (void*)address, PTE_COW);
+  else
+    r=sys_page_map(sys_getenvid(), (void*)address, envid, (void*)address, PTE_U);
+	if (r<0)
+    panic("duppage messed up");
+  return 0;
 }
 
 //
@@ -85,12 +100,18 @@ fork(void)
   int i;
   for (i=0; i<PGNUM(UTOP); i)
   {
+    //if page is writable or COW and not UXSTACK
     if ((uvpt[PGNUM(i)] & (PTE_W|PTE_COW)) && i!=PGNUM(UXSTACKTOP-PGSIZE))
     {
       //duppage
+      duppage(child, PGNUM(i));
     }
   }
-  panic("fork not implemented");
+  sys_env_set_pgfault_upcall(child, pgfault);
+  sys_env_set_status(child, ENV_RUNNABLE);
+  //set child tf eax to 0
+  envs[child].env_tf.tf_regs.reg_eax=0;
+  return child;
 }
 
 // Challenge!
