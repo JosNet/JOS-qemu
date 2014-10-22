@@ -235,10 +235,10 @@ sys_page_map(envid_t srcenvid, void *srcva,
     return -E_INVAL;
   if ((((perm & PTE_W)) & ((*srcpte & PTE_U))))
     return -E_INVAL;
-  cprintf("sys_page_map: done checking perms\n");
+  //cprintf("sys_page_map: done checking perms\n");
   if (page_insert(dstenv->env_pgdir, srcpage, dstva, perm)!=0)
     return -E_NO_MEM;
-  cprintf("sys_page_map: return 0\n");
+  //cprintf("sys_page_map: return 0\n");
   return 0;
 }
 
