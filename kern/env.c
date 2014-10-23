@@ -437,9 +437,9 @@ env_create(uint8_t *binary, enum EnvType type)
     panic("env alloc messed up");
   }
   e->env_type=type;
+  load_icode(e, binary);
   e->priority=1; //all envs start with priority 1 to make sure they're scheduled at all
   ++priority_sums;
-  load_icode(e, binary);
   //cprintf("end env_create\n");
 }
 

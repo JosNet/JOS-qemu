@@ -70,22 +70,24 @@ sched_yield(void)
   }
 #else
   //lottery scheduler
-  cprintf("lottery scheduler\n");
+  cprintf("lottery scheduler, %d\n", priority_sums);
   if (priority_sums<=0)
   {
     //there are no envs
+    cprintf("no envs left\n");
     sched_halt();
   }
-  int ticket=xor128() % priority_sums; //ding ding!
+  int ticket=(xor128() % priority_sums)+1; //ding ding!
   cprintf("ticket is %d\n", ticket);
   int id;
   for (id=0; id<NENV; ++id)
   {
-    if (&envs[id] && envs[id].env_status==ENV_RUNNABLE)
+    if (&envs[id] && (envs[id].env_status==ENV_RUNNABLE))
     {
       ticket-=envs[id].priority;
       if (ticket<=0)
       {
+        cprintf("running env %d\n", id);
         env_run(&envs[id]);
         return;
       }

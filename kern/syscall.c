@@ -90,11 +90,11 @@ sys_exofork(void)
   int retval=env_alloc(&newenv, curenv->env_id);
   if (retval<0)
     return retval;
-  newenv->priority=1;
-  ++priority_sums;
   newenv->env_status==ENV_NOT_RUNNABLE;
   newenv->env_tf=curenv->env_tf; //copy registers
   newenv->env_tf.tf_regs.reg_eax=0;
+  newenv->priority=1;
+  ++priority_sums;
   return newenv->env_id;
 }
 
