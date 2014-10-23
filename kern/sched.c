@@ -5,7 +5,7 @@
 #include <kern/pmap.h>
 #include <kern/monitor.h>
 
-#define LOTTERY_SCHEDULER
+//#define LOTTERY_SCHEDULER
 void sched_halt(void);
 extern int priority_sums;
 

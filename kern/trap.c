@@ -200,6 +200,11 @@ trap_dispatch(struct Trapframe *tf)
 
   switch (tf->tf_trapno)
   {
+    case IRQ_OFFSET+IRQ_TIMER:
+      lapiceoi();
+      sched_yield();
+      return;
+      break;
     case T_PGFLT: //call pg_handler
       page_fault_handler(tf);
       return;
@@ -208,11 +213,6 @@ trap_dispatch(struct Trapframe *tf)
       monitor(tf);
       return;
       break;
-    /*case IRQ_OFFSET+IRQ_TIMER:
-      lapic_eoi();
-      sched_yield();
-      return;
-      break;*/
     case T_SYSCALL: //invoke syscall()
       //The system call number will go in %eax, and the arguments (up to five of them) 
       //will go in %edx, %ecx, %ebx, %edi, and %esi, respectively
