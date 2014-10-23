@@ -5,7 +5,25 @@
 #include <kern/pmap.h>
 #include <kern/monitor.h>
 
+#define LOTTERY_SCHEDULER
 void sched_halt(void);
+extern int priority_sums;
+
+//code I got on the internet to approximate a RNG
+uint32_t xor128(void) {
+  static uint32_t x = 0xdeadbeef;
+  static uint32_t y = 0xcafebffe;
+  static uint32_t z = 0x698D;
+  static uint32_t w = 0xABCD69;
+  uint32_t t;
+
+  t = x ^ (x << 11);
+  x = y; y = z; z = w;
+  return w = w ^ (w >> 19) ^ (t ^ (t >> 8));
+}
+
+
+
 
 // Choose a user environment to run and run it.
 void
@@ -30,7 +48,10 @@ sched_yield(void)
 
 	// LAB 4: Your code here.
   idle = thiscpu->cpu_env;
-  int startenvid = (idle != NULL) ? ENVX(idle->env_id) : 0;
+#ifndef LOTTERY_SCHEDULER
+  int startenvid=0;
+  if (idle!=NULL)
+    startenvid=ENVX(idle->env_id);
   int i = startenvid+1;
   for ( ; i != startenvid; i = (i+1) % NENV)
     //cprintf("env id: %d status: %d\n", i, envs[i].env_status);
@@ -47,23 +68,34 @@ sched_yield(void)
     env_run(idle);
     return;
   }
-
-  //for testing
-  /*int i;
-  for (i=0; i<NENV; ++i)
+#else
+  //lottery scheduler
+  cprintf("lottery scheduler\n");
+  if (priority_sums<=0)
   {
-    if (envs[i].env_status==ENV_RUNNABLE && &envs[i])
+    //there are no envs
+    sched_halt();
+  }
+  int ticket=xor128() % priority_sums; //ding ding!
+  cprintf("ticket is %d\n", ticket);
+  int id;
+  for (id=0; id<NENV; ++id)
+  {
+    if (&envs[id] && envs[id].env_status==ENV_RUNNABLE)
     {
-      cprintf("running %d\n", i);
-      env_run(&envs[i]);
+      ticket-=envs[id].priority;
+      if (ticket<=0)
+      {
+        env_run(&envs[id]);
+        return;
+      }
     }
   }
-  if (curenv && curenv->env_status==ENV_RUNNING)
-  {
-    cprintf("back to same env\n");
-    env_run(curenv);
+  if (idle && (idle->env_status == ENV_RUNNING || idle->env_status==ENV_RUNNABLE)){
+    env_run(idle);
+    return;
   }
-  */
+#endif
 	// sched_halt never returns
 	sched_halt();
 }

@@ -18,7 +18,8 @@
 
 struct Env *envs = NULL;		// All environments
 static struct Env *env_free_list;	// Free environment list
-					// (linked by Env->env_link)
+extern int priority_sums;
+// (linked by Env->env_link)
 //static void boot_map_region(pde_t *pgdir, uintptr_t va, size_t size, physaddr_t pa, int perm);
 
 #define ENVGENSHIFT	12		// >= LOGNENV
@@ -135,6 +136,7 @@ env_init(void)
     env_free_list=env;
     --i;
   }
+  priority_sums=0; //there's probably a better place for this
 	// Per-CPU part of the initialization
 	env_init_percpu();
   assert(env_free_list==&envs[0]);
@@ -435,6 +437,8 @@ env_create(uint8_t *binary, enum EnvType type)
     panic("env alloc messed up");
   }
   e->env_type=type;
+  e->priority=1; //all envs start with priority 1 to make sure they're scheduled at all
+  ++priority_sums;
   load_icode(e, binary);
   //cprintf("end env_create\n");
 }
@@ -509,6 +513,7 @@ env_destroy(struct Env *e)
 		return;
 	}
 
+  priority_sums-=e->priority;
 	env_free(e);
 
 	if (curenv == e) {
