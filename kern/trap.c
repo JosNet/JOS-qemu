@@ -201,7 +201,7 @@ trap_dispatch(struct Trapframe *tf)
   switch (tf->tf_trapno)
   {
     case IRQ_OFFSET+IRQ_TIMER:
-      lapiceoi();
+    //  lapiceoi();
       sched_yield();
       return;
       break;
