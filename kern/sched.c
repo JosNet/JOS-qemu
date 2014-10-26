@@ -59,6 +59,7 @@ sched_yield(void)
     i=0;
   }
 #ifndef LOTTERY_SCHEDULER
+  int count=0;
   for ( ; i != startenvid; i = (i+1) % NENV)
   {
     //cprintf("env id: %d status: %d\n", i, envs[i].env_status);
@@ -66,9 +67,11 @@ sched_yield(void)
       break;
     if (envs[i].env_status == ENV_RUNNABLE){
  //     cprintf("running env %d\n", i);
+      cprintf("\t\tcpunum:%d count:%d\n", cpunum(), count);
       env_run(&envs[i]);
       return;
     }
+    ++count;
   }
   if (startenvid==0 && &envs[0] && envs[0].env_status==ENV_RUNNABLE)
   {
