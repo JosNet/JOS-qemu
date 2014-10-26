@@ -5,7 +5,9 @@
 #include <kern/pmap.h>
 #include <kern/monitor.h>
 
+//#define RR_SCHEDULER
 //#define LOTTERY_SCHEDULER
+#define INDEXED_SCHEDULER
 void sched_halt(void);
 extern int priority_sums;
 
@@ -58,7 +60,7 @@ sched_yield(void)
   {
     i=0;
   }
-#ifndef LOTTERY_SCHEDULER
+#ifdef RR_SCHEDULER
   int count=0;
   for ( ; i != startenvid; i = (i+1) % NENV)
   {
@@ -82,7 +84,8 @@ sched_yield(void)
     env_run(idle);
     return;
   }
-#else
+#endif
+#ifdef LOTTERY_SCHEDULER
   //lottery scheduler
 //  cprintf("lottery scheduler, %d\n", priority_sums);
   if (priority_sums<=0)
@@ -115,6 +118,41 @@ sched_yield(void)
     env_run(idle);
     return;
   }
+#endif
+#ifdef INDEXED_SCHEDULER
+#define RUNSIZE NENV*3
+static unsigned runstack[RUNSIZE]={-1}; //-1==invalid
+static unsigned *rsp=&runstack[RUNSIZE-2];
+if (rsp==&runstack[RUNSIZE-1])
+{
+  //now we prune
+  //cprintf("pruning\n");
+  i=0;
+  for (;i<NENV; ++i)
+  {
+    if (envs[i].env_status==ENV_RUNNABLE)
+    {
+      --rsp;
+      *rsp=i;
+   //   cprintf("found runnable env\n");
+    }
+  }
+  if (idle && (idle->env_status == ENV_RUNNING || idle->env_status==ENV_RUNNABLE)){
+    env_run(idle);
+    return;
+  }
+  //sched_yield();
+}
+else
+{
+  //we pop and run
+  //cprintf("running\n");
+  envid_t id=*rsp;
+  ++rsp;
+  env_run(&envs[id]);
+}
+
+
 #endif
 	// sched_halt never returns
 	sched_halt();
