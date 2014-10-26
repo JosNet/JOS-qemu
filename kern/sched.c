@@ -48,18 +48,24 @@ sched_yield(void)
 
 	// LAB 4: Your code here.
   idle = thiscpu->cpu_env;
-#ifndef LOTTERY_SCHEDULER
   int startenvid=0;
-  if (idle!=NULL)
+  if (idle)
+  {
     startenvid=ENVX(idle->env_id);
+  }
   int i = startenvid+1;
   if (startenvid==NENV-1)
+  {
     i=0;
+  }
+#ifndef LOTTERY_SCHEDULER
   for ( ; i != startenvid; i = (i+1) % NENV)
   {
     //cprintf("env id: %d status: %d\n", i, envs[i].env_status);
+    if (!&envs[i])
+      break;
     if (envs[i].env_status == ENV_RUNNABLE){
-      cprintf("running env %d\n", i);
+ //     cprintf("running env %d\n", i);
       env_run(&envs[i]);
       return;
     }
@@ -75,28 +81,32 @@ sched_yield(void)
   }
 #else
   //lottery scheduler
-  cprintf("lottery scheduler, %d\n", priority_sums);
+//  cprintf("lottery scheduler, %d\n", priority_sums);
   if (priority_sums<=0)
   {
     //there are no envs
-    cprintf("no envs left\n");
+  //  cprintf("no envs left\n");
     sched_halt();
   }
   int ticket=(xor128() % priority_sums)+1; //ding ding!
-  cprintf("ticket is %d\n", ticket);
-  int id;
-  for (id=0; id<NENV; ++id)
+  //cprintf("ticket is %d\n", ticket);
+  for (; i!=startenvid; i=(i+1)%NENV)
   {
-    if (&envs[id] && (envs[id].env_status==ENV_RUNNABLE))
+    if (&envs[i] && (envs[i].env_status==ENV_RUNNABLE))
     {
-      ticket-=envs[id].priority;
+      ticket-=envs[i].priority;
       if (ticket<=0)
       {
-        cprintf("running env %d\n", id);
-        env_run(&envs[id]);
+    //    cprintf("running env %d\n", id);
+        env_run(&envs[i]);
         return;
       }
     }
+  }
+  if (startenvid==0 && &envs[0] && envs[0].env_status==ENV_RUNNABLE)
+  {
+    env_run(&envs[0]);
+    return;
   }
   if (idle && (idle->env_status == ENV_RUNNING || idle->env_status==ENV_RUNNABLE)){
     env_run(idle);
@@ -122,7 +132,7 @@ sched_halt(void)
 		     envs[i].env_status == ENV_RUNNING ||
 		     envs[i].env_status == ENV_DYING))
     {
-      cprintf("env %d can still run\n", i);
+     // cprintf("env %d can still run\n", i);
       break;
     }
 	}

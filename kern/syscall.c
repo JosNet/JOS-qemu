@@ -52,7 +52,8 @@ sys_getenvid(void)
 static int
 sys_env_destroy(envid_t envid)
 {
-	int r;
+	//cprintf("sys_env_destroy\n");
+  int r;
 	struct Env *e;
 
 	if ((r = envid2env(envid, &e, 1)) < 0)
@@ -137,7 +138,7 @@ static int
 sys_env_set_pgfault_upcall(envid_t envid, void *func)
 {
 	// LAB 4: Your code here.
-  cprintf("in sys_env_set_pgfault_upcall\n");
+  //cprintf("in sys_env_set_pgfault_upcall\n");
   struct Env* env=NULL;
   envid2env(envid, &env, 1);
   if (env==NULL)
@@ -225,17 +226,23 @@ sys_page_map(envid_t srcenvid, void *srcva,
 
 	// LAB 4: Your code here.
   struct Env *srcenv=NULL, *dstenv=NULL;
-  envid2env(srcenvid, &srcenv, 1);
-  envid2env(dstenvid, &dstenv, 1);
+  envid2env(srcenvid, &srcenv, 0);
+  envid2env(dstenvid, &dstenv, 0);
   if (!srcenv || !dstenv)
+  {
+    cprintf("sys_page_map bad envs src: %d, dst %d\n", ENVX(srcenvid),ENVX(dstenvid));
     return -E_BAD_ENV;
+  }
   if ((int)srcva>=UTOP || ((int)srcva%PGSIZE)!=0 || (int)dstva>=UTOP || ((int)dstva%PGSIZE!=0) || (~PTE_SYSCALL & perm)>0)
     return -E_INVAL;
   pte_t* srcpte=NULL;
   struct PageInfo* srcpage=NULL;
   srcpage=page_lookup(srcenv->env_pgdir, srcva, &srcpte);
   if (srcpage==NULL)
+  {
+    cprintf("sys_page_map: no page found\n");
     return -E_INVAL;
+  }
   if ((((perm & PTE_W)) & ((*srcpte & PTE_U))))
     return -E_INVAL;
   //cprintf("sys_page_map: done checking perms\n");
@@ -311,7 +318,10 @@ sys_ipc_try_send(envid_t envid, uint32_t value, void *srcva, unsigned perm)
 {
 	// LAB 4: Your code here.
   if (!&envs[envid])
+  {
+    cprintf("ipc_send bad env\n");
     return -E_BAD_ENV;
+  }
   struct Env* target;
   int r=envid2env(envid, &target, 0);
   if (r<0)
@@ -319,15 +329,24 @@ sys_ipc_try_send(envid_t envid, uint32_t value, void *srcva, unsigned perm)
   if (!target->env_ipc_recving)
     return -E_IPC_NOT_RECV;
 	if ((int)srcva%PGSIZE)
+  {
+    cprintf("ipc_send va not page aligned\n");
     return -E_INVAL;
-  if ((perm&PTE_W) && ((*(int*)srcva & PTE_W)<=0))
+  }
+  if (user_mem_check(curenv, srcva, PGSIZE, perm)<0)
+  {
+    cprintf("ipc_send perms don't match\n");
     return -E_INVAL;
-  bool sendpage=(int)srcva<UTOP && target->env_ipc_dstva<UTOP;
+  }
+  bool sendpage=(int)srcva<UTOP && (int)target->env_ipc_dstva<UTOP;
   if (sendpage)
   {
     r=sys_page_map(sys_getenvid(), srcva, envid, target->env_ipc_dstva, perm);
     if (r<0)
+    {
+      cprintf("ipc_send page map fail. dstva=%x\n", (int)target->env_ipc_dstva);
       return r;
+    }
   }
   target->env_ipc_recving=0;
   target->env_ipc_from=sys_getenvid();
@@ -356,15 +375,16 @@ static int
 sys_ipc_recv(void *dstva)
 {
 	// LAB 4: Your code here.
-  if (dstva<UTOP && (int)dstva%PGSIZE)
+  if ((int)dstva<UTOP && (int)dstva%PGSIZE)
     return -E_INVAL;
   curenv->env_ipc_recving=1;
   curenv->env_status=ENV_NOT_RUNNABLE;
   curenv->env_ipc_dstva=dstva;
-  while (curenv->env_ipc_recving==1)
-  {
+  //while (curenv->env_ipc_recving==1)
+ // {
     sched_yield();
-  }
+ // }
+  return 0;
 }
 
 // Dispatches to the correct kernel function, passing the arguments.
@@ -409,6 +429,12 @@ syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, 
       break;
     case SYS_env_set_pgfault_upcall:
       return sys_env_set_pgfault_upcall((envid_t)a1, (void*)a2);
+      break;
+    case SYS_ipc_try_send:
+      return sys_ipc_try_send((envid_t)a1, (uint32_t)a2, (void*)a3, (unsigned)a4);
+      break;
+    case SYS_ipc_recv:
+      return sys_ipc_recv((void*)a1);
       break;
     default:
 		  return -E_NO_SYS;

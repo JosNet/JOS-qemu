@@ -106,7 +106,7 @@ fork(void)
   if (newenvid==0)
   {
     //this is the child
-    cprintf("exofork child\n");
+    //cprintf("exofork child\n");
     thisenv=&envs[ENVX(sys_getenvid())];
     return 0;
   }
@@ -118,6 +118,8 @@ fork(void)
     if (!(uvpd[PDX(i<<PGSHIFT)] & PTE_P))
     {
       //the whole directory isn't present
+      //cprintf("pgdir not present\n");
+      i+=0x400-1;
       continue;
     }
     else if (!(uvpt[i] & PTE_P))
@@ -133,18 +135,18 @@ fork(void)
     }*/
     else if (i==PGNUM(UXSTACKTOP-PGSIZE))
     {
-      cprintf("skipping UXSTACK\n");
+      //cprintf("skipping UXSTACK\n");
       continue;
     }
   //  else if ((uvpt[PGNUM(i)] & (PTE_W|PTE_COW)) && i!=PGNUM(UXSTACKTOP-PGSIZE))
     else
     {
       //duppage
-      cprintf("duppage\n");
+      //cprintf("duppage\n");
       duppage(newenvid, i);
     }
   }
-  cprintf("done iterating pages\n");
+  //cprintf("done iterating pages\n");
   if (sys_page_alloc(newenvid, (void*)(UXSTACKTOP-PGSIZE), PTE_W|PTE_U|PTE_P)<0)
     panic("couldn't allocate user exception stack");
   if (sys_env_set_pgfault_upcall(newenvid, thisenv->env_pgfault_upcall)<0)

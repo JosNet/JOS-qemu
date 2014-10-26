@@ -122,7 +122,7 @@ env_init(void)
 {
 	// Set up envs array
 	// LAB 3: Your code here.
-  cprintf("env init start\n");
+  //cprintf("env init start\n");
   env_free_list=NULL;
   int i=NENV-1;
   while (i>=0)
@@ -140,7 +140,7 @@ env_init(void)
 	// Per-CPU part of the initialization
 	env_init_percpu();
   assert(env_free_list==&envs[0]);
-  cprintf("env init end\n");
+  //cprintf("env init end\n");
 }
 
 // Load GDT and segment descriptors.
@@ -177,7 +177,7 @@ env_init_percpu(void)
 static int
 env_setup_vm(struct Env *e)
 {
-	cprintf("env_setup_vm start\n");
+	//cprintf("env_setup_vm start\n");
   int i;
 	struct PageInfo *p = NULL;
 
@@ -216,7 +216,7 @@ env_setup_vm(struct Env *e)
 	// Permissions: kernel R, user R
 	e->env_pgdir[PDX(UVPT)] = PADDR(e->env_pgdir) | PTE_P | PTE_U;
 
-  cprintf("env_setup end\n");
+  //cprintf("env_setup end\n");
 	return 0;
 }
 
@@ -311,7 +311,7 @@ region_alloc(struct Env *e, void *va, size_t len)
 	//   'va' and 'len' values that are not page-aligned.
 	//   You should round va down, and round (va + len) up.
 	//   (Watch out for corner-cases!)
-  cprintf("region_alloc start\n");
+  //cprintf("region_alloc start\n");
   int start=ROUNDDOWN((int)va, PGSIZE);
   int end=ROUNDUP(((int)va)+len, PGSIZE);
   if (start>end)
@@ -329,7 +329,7 @@ region_alloc(struct Env *e, void *va, size_t len)
     }
     start+=PGSIZE;
   }
-  cprintf("region_alloc end\n");
+  //cprintf("region_alloc end\n");
   return;
 }
 
@@ -390,35 +390,35 @@ load_icode(struct Env *e, uint8_t *binary)
 
 	// Now map one page for the program's initial stack
 	// at virtual address USTACKTOP - PGSIZE.
-  cprintf("load_icode start\n");
+  //cprintf("load_icode start\n");
   //e->env_tf.tf_esp=USTACKTOP; //initialize the stack
   // LAB 3: Your code here.
   struct Elf* elf=(struct Elf*)binary;
   struct Proghdr *ph, *eph;
   if (elf->e_magic != ELF_MAGIC) //do you even majic bro?
     panic("load_icode: elf magic is broke");
-  cprintf("found valid elf\n");
+  //cprintf("found valid elf\n");
   ph=(struct Proghdr*)(binary + elf->e_phoff); //pointer to first program header
   eph=ph+elf->e_phnum; //pointer to last program header
   lcr3(PADDR(e->env_pgdir));
-  cprintf("switched pgdir\n");
+  //cprintf("switched pgdir\n");
   region_alloc(e, (void *)(USTACKTOP-PGSIZE), PGSIZE);
   for (; ph<eph; ++ph)
   {
     //loop through every program segment and only load the right types
     if (ph->p_type==ELF_PROG_LOAD)
     {
-      cprintf("correct ph type\n");
+      //cprintf("correct ph type\n");
       //do that thing
       region_alloc(e, (void*)ph->p_va, ph->p_memsz);
       memcpy((void*)ph->p_va, binary+ph->p_offset, ph->p_filesz); //copy over program
       memset((void*)(ph->p_va+ph->p_filesz), 0, ph->p_memsz-ph->p_filesz); //zero remaining bytes
-      cprintf("loaded ph:%p\n", ph);
+      //cprintf("loaded ph:%p\n", ph);
     }
   }
   e->env_tf.tf_eip=elf->e_entry; //set the entry point
   lcr3(PADDR(kern_pgdir));
-  cprintf("load_icode end\n");
+  //cprintf("load_icode end\n");
 }
 
 //
@@ -496,7 +496,7 @@ env_free(struct Env *e)
 	e->env_status = ENV_FREE;
 	e->env_link = env_free_list;
 	env_free_list = e;
-  cprintf("env free done\n");
+  //cprintf("env free done\n");
 }
 
 //
@@ -511,7 +511,8 @@ env_destroy(struct Env *e)
 	// ENV_DYING. A zombie environment will be freed the next time
 	// it traps to the kernel.
 	if (e->env_status == ENV_RUNNING && curenv != e) {
-		e->env_status = ENV_DYING;
+		//cprintf("its running. marked for death\n");
+    e->env_status = ENV_DYING;
 		return;
 	}
 
