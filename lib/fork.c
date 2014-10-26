@@ -106,6 +106,7 @@ fork(void)
   if (newenvid==0)
   {
     //this is the child
+    cprintf("exofork child\n");
     thisenv=&envs[ENVX(sys_getenvid())];
     return 0;
   }
@@ -124,9 +125,10 @@ fork(void)
       //page not marked
       continue;
     }
-    /*else if (i==PGNUM(USTACKTOP-PGSIZE))
+    /*
+    else if (i==PGNUM(USTACKTOP))
     {
-      cprintf("skipping USTACK\n");
+      cprintf("skipping USTACK buffer\n");
       continue;
     }*/
     else if (i==PGNUM(UXSTACKTOP-PGSIZE))

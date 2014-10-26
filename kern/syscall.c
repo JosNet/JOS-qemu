@@ -90,7 +90,7 @@ sys_exofork(void)
   int retval=env_alloc(&newenv, curenv->env_id);
   if (retval<0)
     return retval;
-  newenv->env_status==ENV_NOT_RUNNABLE;
+  newenv->env_status=ENV_NOT_RUNNABLE;
   newenv->env_tf=curenv->env_tf; //copy registers
   newenv->env_tf.tf_regs.reg_eax=0;
   newenv->priority=1;
@@ -310,7 +310,35 @@ static int
 sys_ipc_try_send(envid_t envid, uint32_t value, void *srcva, unsigned perm)
 {
 	// LAB 4: Your code here.
-	panic("sys_ipc_try_send not implemented");
+  if (!&envs[envid])
+    return -E_BAD_ENV;
+  struct Env* target;
+  int r=envid2env(envid, &target, 0);
+  if (r<0)
+    return r;
+  if (!target->env_ipc_recving)
+    return -E_IPC_NOT_RECV;
+	if ((int)srcva%PGSIZE)
+    return -E_INVAL;
+  if ((perm&PTE_W) && ((*(int*)srcva & PTE_W)<=0))
+    return -E_INVAL;
+  bool sendpage=(int)srcva<UTOP && target->env_ipc_dstva<UTOP;
+  if (sendpage)
+  {
+    r=sys_page_map(sys_getenvid(), srcva, envid, target->env_ipc_dstva, perm);
+    if (r<0)
+      return r;
+  }
+  target->env_ipc_recving=0;
+  target->env_ipc_from=sys_getenvid();
+  target->env_ipc_value=value;
+  if (sendpage)
+    target->env_ipc_perm=perm;
+  else
+    target->env_ipc_perm=0;
+  target->env_status=ENV_RUNNABLE;
+  target->env_tf.tf_regs.reg_eax=0;
+  return 0;
 }
 
 // Block until a value is ready.  Record that you want to receive
@@ -328,8 +356,15 @@ static int
 sys_ipc_recv(void *dstva)
 {
 	// LAB 4: Your code here.
-	panic("sys_ipc_recv not implemented");
-	return 0;
+  if (dstva<UTOP && (int)dstva%PGSIZE)
+    return -E_INVAL;
+  curenv->env_ipc_recving=1;
+  curenv->env_status=ENV_NOT_RUNNABLE;
+  curenv->env_ipc_dstva=dstva;
+  while (curenv->env_ipc_recving==1)
+  {
+    sched_yield();
+  }
 }
 
 // Dispatches to the correct kernel function, passing the arguments.

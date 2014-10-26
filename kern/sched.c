@@ -53,12 +53,17 @@ sched_yield(void)
   if (idle!=NULL)
     startenvid=ENVX(idle->env_id);
   int i = startenvid+1;
+  if (startenvid==NENV-1)
+    i=0;
   for ( ; i != startenvid; i = (i+1) % NENV)
+  {
     //cprintf("env id: %d status: %d\n", i, envs[i].env_status);
     if (envs[i].env_status == ENV_RUNNABLE){
+      cprintf("running env %d\n", i);
       env_run(&envs[i]);
       return;
     }
+  }
   if (startenvid==0 && &envs[0] && envs[0].env_status==ENV_RUNNABLE)
   {
     env_run(&envs[0]);
