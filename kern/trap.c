@@ -197,12 +197,17 @@ trap_dispatch(struct Trapframe *tf)
 	// Handle clock interrupts. Don't forget to acknowledge the
 	// interrupt using lapic_eoi() before calling the scheduler!
 	// LAB 4: Your code here.
-
+  static unsigned timecount=0;
   switch (tf->tf_trapno)
   {
     case IRQ_OFFSET+IRQ_TIMER:
       lapic_eoi();
-      sched_yield();
+      if (timecount>=10)
+      {
+        timecount=0;
+        sched_yield();
+      }
+      ++timecount;
       return;
       break;
     case T_PGFLT: //call pg_handler

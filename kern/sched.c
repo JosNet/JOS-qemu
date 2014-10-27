@@ -126,7 +126,6 @@ static unsigned *rsp=&runstack[RUNSIZE-2];
 if (rsp==&runstack[RUNSIZE-1])
 {
   //now we prune
-  //cprintf("pruning\n");
   i=0;
   for (;i<NENV; ++i)
   {
@@ -134,19 +133,16 @@ if (rsp==&runstack[RUNSIZE-1])
     {
       --rsp;
       *rsp=i;
-   //   cprintf("found runnable env\n");
     }
   }
   if (idle && (idle->env_status == ENV_RUNNING || idle->env_status==ENV_RUNNABLE)){
     env_run(idle);
     return;
   }
-  //sched_yield();
 }
 else
 {
   //we pop and run
-  //cprintf("running\n");
   envid_t id=*rsp;
   ++rsp;
   env_run(&envs[id]);
