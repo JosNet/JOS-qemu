@@ -56,7 +56,7 @@ sched_yield(void)
     startenvid=ENVX(idle->env_id);
   }
   int i = startenvid+1;
-  if (startenvid==NENV-1)
+  if (startenvid==(NENV-1))
   {
     i=0;
   }
@@ -65,11 +65,11 @@ sched_yield(void)
   for ( ; i != startenvid; i = (i+1) % NENV)
   {
     //cprintf("env id: %d status: %d\n", i, envs[i].env_status);
-    if (!&envs[i])
-      break;
+   // if (!&envs[i])
+  //    break;
     if (envs[i].env_status == ENV_RUNNABLE){
  //     cprintf("running env %d\n", i);
-      cprintf("\t\tcpunum:%d count:%d\n", cpunum(), count);
+//      cprintf("\t\tcpunum:%d count:%d\n", cpunum(), count);
       env_run(&envs[i]);
       return;
     }
@@ -120,7 +120,7 @@ sched_yield(void)
   }
 #endif
 #ifdef INDEXED_SCHEDULER
-#define RUNSIZE NENV*3
+#define RUNSIZE NENV*1
 static unsigned runstack[RUNSIZE]={-1}; //-1==invalid
 static unsigned *rsp=&runstack[RUNSIZE-2];
 if (rsp==&runstack[RUNSIZE-1])
