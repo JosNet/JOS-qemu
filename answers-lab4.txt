@@ -39,10 +39,11 @@ Challenge!
   runnable envs (currently a stack) and then a cpu just pops the next one off
   when its looking for more work. If there is nothing left in the stack then
   it is that cpu's job to comb through the envs[] array and repopulate the
-  stack. It kind of sounds like round-robin scheduling but in my subjective
-  testing (and from the grade script) this scheme outperformed round-robin on
-  every test. It also seems to scale very well with more cpus (12 cpu's was
-  significantly faster than 3). It probably has something to do with amortized
+  stack. It kind of sounds like round-robin scheduling and they perform about
+  the same actually. There are some tests where one is better than the other.
+  If I increase my CPUS to a large number though (>=4) my scheduler outperforms RR
+  on every test expect primes. It probably has something to do with amortized
   runtime. I don't actively do it, but this scheduler can easily be extended
   to support time-slicing by simply pushing a runnable env more than once into
   the stack. You can try this one out by uncommenting the #define in sched.c
+  It's currently commented because primes takes twice as long on this scheduler.
