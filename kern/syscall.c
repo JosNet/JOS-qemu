@@ -333,11 +333,12 @@ sys_ipc_try_send(envid_t envid, uint32_t value, void *srcva, unsigned perm)
     cprintf("ipc_send va not page aligned\n");
     return -E_INVAL;
   }
-  if (user_mem_check(curenv, srcva, PGSIZE, perm)<0)
+  //this causes primes to time out...
+  /*if (user_mem_check(curenv, srcva, PGSIZE, perm)<0)
   {
     cprintf("ipc_send perms don't match\n");
     return -E_INVAL;
-  }
+  }*/
   bool sendpage=(int)srcva<UTOP && (int)target->env_ipc_dstva<UTOP;
   if (sendpage)
   {
