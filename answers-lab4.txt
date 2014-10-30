@@ -1,0 +1,48 @@
+Question 1:
+  When cpu0 boots the additional cpus it already has paging enabled but the
+  others don't (yet). Additionally, the code in mpentry.S is linked above
+  KERNBASE even though it actually resides at a lower portion in memory. As a
+  result, when the other cpus boot they need to know where in physical memory
+  their symbols are until they enable paging because of the different refernce frames.
+  This is the point of MPENTRY_PADDR and the macro MBOOTPHYS which calculates
+  the PADDR of the symbols. If MBOOTPHYS didn't exist, then mpentry would be
+  trying to load symbols from way high up in the memory space (the VA's of the
+  symbols) and then fail catastrophically.
+
+Question 2:
+  We still need seperate cpu stacks for interrupts. The kernel locks are to
+  prevent envs from messing with eachother at the same time and the seperate
+  cpu stacks are to prevent seperate cpus from messing with eachother. If this
+  weren't the case, you could potentially have a cpu handling the interrupt
+  from another.
+
+Question 3:
+  Even though every environment's bytecode lives in userspace, its struct Env
+  lives in kernel space, which is shared for every env. The e pointer points
+  to a struct Env and its VA will not change between pgdir's.
+
+Question 4:
+  An env's registers must be restored properly so that it can run properly...
+  This is facilitated through the TrapFrame structure that every Env posesses.
+  env_pop_tf() restore the saved registers from the TrapFrame.
+
+Challenge!
+  For the challenge I decided to write a better cpu scheduler since those
+  sound fun. My first attempt was a lotttery scheduler where every env could
+  have a priority and then higher priority would correspond to a higher chance
+  of getting picked. tldr, it didn't work very well because I have no metric
+  of what should even get a higher priority. You can try it out, just look in
+  sched.c and uncomment the #define
+
+  Then I came up with a better idea which fits in really nicely with the
+  primtive layout of JOS. I maintain a data structure which only stores
+  runnable envs (currently a stack) and then a cpu just pops the next one off
+  when its looking for more work. If there is nothing left in the stack then
+  it is that cpu's job to comb through the envs[] array and repopulate the
+  stack. It kind of sounds like round-robin scheduling but in my subjective
+  testing (and from the grade script) this scheme outperformed round-robin on
+  every test. It also seems to scale very well with more cpus (12 cpu's was
+  significantly faster than 3). It probably has something to do with amortized
+  runtime. I don't actively do it, but this scheduler can easily be extended
+  to support time-slicing by simply pushing a runnable env more than once into
+  the stack. You can try this one out by uncommenting the #define in sched.c
