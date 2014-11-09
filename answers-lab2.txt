@@ -1,0 +1,56 @@
+Question 1:
+  mystery_t x;
+  char* value = return_a_pointer();
+  *value = 10;
+  x = (mystery_t) value;
+
+x will (should) be cast to a uintptr_t because value is a pointer, and all pointers
+are virtual addresses.
+
+
+Question 2:
+  ENTRY   BASE_VIRTUAL_ADDR     POINTS_TO
+  1023    0xffc00000
+  1022    0xff800000            end of physical memory
+  960     0xf0000000 (KERNBASE) kernel
+  959     0xefff8000            bottom of kernel stack
+  958     0xefbf8000            kernel stack guard
+  957     0xef400000 (UVPT)     kern_pgdir
+  956     0xef000000 (UPAGES)   pages (PageInfo list)
+
+  ---------------------------------Everything below this is empty (for users?)
+  2       0x00800000
+  1       0x00400000
+  0       0x00000000
+
+Q5:
+  Even though the kernel is in the user's space, they wont be able to
+  read/write because there is no PTE_U permission on the pages;
+
+Q4:
+  Jos can support 0xffffffff bytes because any extra and our paging system
+  would mess up!
+
+Q5:
+  At the moment, the user has a scratchpad up to 0xef000000. Stuff above that
+  has already been mapped but the user could still kill UPAGES if he/she
+  wanted.
+
+Q6:
+  In entry.S when the initial 4mb page table is activated it was ok for eip
+  to be low because even though the kernel's link address was high, it was
+  physically loaded at a low spot (~1MB). The initial page table also only maps
+  virtual addresses [KERNBASE, KERNBASE+4MB). EIP switches to a high address
+  after we remap all of physical memory to above KERNBASE. EIP has to
+  eventually change or else it will get clobbered by userspace programs.
+
+Challenge:
+  I implemented challenge 2 which was adding some useful monitor commands
+  to display page mappings, change page permissions, and do memory dumps. I did
+  the page mappings and page permissions by making use of page_lookup. This
+  returns a PageInfo struct as well as an optional pte_t* which I worked with.
+  I used kern_pgdir for the page directory since it's the only one that
+  currently exists. To do memdumps I simply cast the va to a pointer and then
+  dereferenced it. If it was a physical address I converted it to a virtual
+  address first. I also checked for a boundary overflow by using the fact that
+  overflows/underflows loop around.
