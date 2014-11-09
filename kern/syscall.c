@@ -452,7 +452,7 @@ syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, 
     default:
 		  return -E_NO_SYS;
 	}
-  return -E_NO_SYS;
+  //return -E_NO_SYS;
   panic("syscall: shouldn't be here");
 }
 
