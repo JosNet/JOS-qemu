@@ -442,6 +442,11 @@ env_create(uint8_t *binary, enum EnvType type)
     panic("env alloc messed up");
   }
   e->env_type=type;
+  if (type==ENV_TYPE_FS)
+  {
+    //give it io perms with IOPL in eflags
+    e->env_tf.tf_eflags|=FL_IOPL_3;
+  }
   load_icode(e, binary);
   e->priority=1; //all envs start with priority 1 to make sure they're scheduled at all
   ++priority_sums;
