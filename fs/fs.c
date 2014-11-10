@@ -157,54 +157,25 @@ file_block_walk(struct File *f, uint32_t filebno, uint32_t **ppdiskbno, bool all
          *ppdiskbno=&f->f_direct[filebno];
          return 0;
        }
-       else if(filebno>=NDIRECT && f->f_indirect>0)
+       else if (filebno>=NDIRECT && (!f->f_indirect) && alloc==false)
        {
-         //its an indirect block
+         //no indirect block and don't allocate it
+         return -E_NOT_FOUND;
+       }
+       else if (filebno>=NDIRECT && alloc==true)
+       {
+         //allocate the indirect block
+         if (!f->f_indirect)
+         {
+           int ind_block=alloc_block();
+           if (ind_block<0)
+             return ind_block;
+           f->f_indirect=ind_block;
+         }
          uint32_t *indirects=(uint32_t*)(f->f_indirect*BLKSIZE+DISKMAP);
          filebno-=NDIRECT;
-         int isfree=block_is_free(indirects[filebno]); //check if block is free
-         if (isfree==0)
-         {
-           //it's not so just return it
-           *ppdiskbno=&indirects[filebno];
-           return 0;
-         }
-         else if (isfree && alloc==false)
-         {
-           //well don't allocate it
-           return -E_NOT_FOUND;
-         }
-         else if (isfree && alloc)
-         {
-           int newblock=alloc_block(); //allocate a new block
-           if (newblock==-E_NO_DISK)
-           {
-             return newblock; //we ran out of space on disk
-           }
-           indirects[filebno]=newblock; //map the new block
-           *ppdiskbno=&indirects[filebno];
-           return 0;
-         }
-       }
-       else if (f->f_indirect==0 && alloc==true)
-       {
-         //we need to allocate the indirect block
-         cprintf("allocating indirect block\n");
-         int newblock=alloc_block();
-         if (newblock==-E_NO_DISK)
-           return newblock;
-         f->f_indirect=newblock;
-         int ret=file_block_walk(f, filebno, ppdiskbno, 1);
-         if (ret<0)
-         {
-           free_block(newblock);
-           return ret;
-         }
+         *ppdiskbno=&indirects[filebno];
          return 0;
-       }
-       else if (f->f_indirect==0 && alloc==false)
-       {
-         return -E_NOT_FOUND; //we can't allocate the indirect block
        }
        panic("block_walk: shouldn't be here");
 }
@@ -225,6 +196,15 @@ file_get_block(struct File *f, uint32_t filebno, char **blk)
        int ret=file_block_walk(f, filebno, &diskbno, true);
        if (ret<0)
          return ret;
+       if (!*diskbno)
+       {
+         int nb=alloc_block();
+         if (nb<0)
+         {
+           return -E_NO_DISK;
+         }
+         *diskbno=nb;
+       }
        *blk=(void*)((*diskbno)*BLKSIZE+DISKMAP);
        return 0;
 }
