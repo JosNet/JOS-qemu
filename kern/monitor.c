@@ -31,6 +31,7 @@ static struct Command commands[] = {
   {"showmapps", "Show kernel page mappings from a to b", mon_showmappings},
   {"paperm", "Change the permissions of page at va", mon_changepage},
   {"memdump", "dump memory at pa/va", mon_memdump},
+ // {"sh", "start the shell and do work", mon_sh_start},
 };
 #define NCOMMANDS (sizeof(commands)/sizeof(commands[0]))
 

@@ -204,6 +204,14 @@ trap_dispatch(struct Trapframe *tf)
         sched_yield();
       return;
       break;
+    case IRQ_OFFSET+IRQ_KBD:
+      kbd_intr();
+      return;
+      break;
+    case IRQ_OFFSET+IRQ_SERIAL:
+      serial_intr();
+      return;
+      break;
     case T_PGFLT: //call pg_handler
       page_fault_handler(tf);
       return;

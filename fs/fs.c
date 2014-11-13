@@ -177,7 +177,14 @@ file_block_walk(struct File *f, uint32_t filebno, uint32_t **ppdiskbno, bool all
          *ppdiskbno=&indirects[filebno];
          return 0;
        }
-       panic("block_walk: shouldn't be here");
+       else if (filebno>=NDIRECT && alloc==false)
+       {
+         uint32_t *indirects=(uint32_t*)(f->f_indirect*BLKSIZE+DISKMAP);
+         filebno-=NDIRECT;
+         *ppdiskbno=&indirects[filebno];
+         return 0;
+       }
+       panic("block_walk: shouldn't be here\nfilebno:%d alloc:%d", filebno, alloc);
 }
 
 // Set *blk to the address in memory where the filebno'th

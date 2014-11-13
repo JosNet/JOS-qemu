@@ -42,6 +42,7 @@ again:
 
 		case '<':	// Input redirection
 			// Grab the filename from the argument list
+      //cprintf("opening %s\n", t);
 			if (gettoken(0, &t) != 'w') {
 				cprintf("syntax error: < not followed by word\n");
 				exit();
@@ -55,7 +56,14 @@ again:
 			// then close the original 'fd'.
 
 			// LAB 5: Your code here.
-			panic("< redirection not implemented");
+			if ((fd = open(t, O_RDONLY)) < 0) {
+				cprintf("open %s for read: %e", t, fd);
+				exit();
+			}
+			if (fd != 0) {
+				dup(fd, 0);
+				close(fd);
+			}
 			break;
 
 		case '>':	// Output redirection

@@ -301,6 +301,30 @@ static int
 copy_shared_pages(envid_t child)
 {
 	// LAB 5: Your code here.
+  int i;
+  for (i=0; i<PGNUM(UTOP); ++i)
+  {
+    //if page is writable or COW and not UXSTACK
+   // cprintf("i: %d, UTOP: %d\n", i, PGNUM(UTOP));
+    if (!(uvpd[PDX(i<<PGSHIFT)] & PTE_P))
+    {
+      //the whole directory isn't present
+      //cprintf("pgdir not present\n");
+      i+=0x400-1;
+    }
+    else if (!(uvpt[i] & PTE_P))
+    {
+      //page not marked
+    }
+    else if (uvpt[i]&PTE_SHARE)
+    {
+      //copy page mappings
+      int address=i*PGSIZE;
+      int r=sys_page_map(sys_getenvid(), (void*)address, child, (void*)address, PTE_SYSCALL);
+	    if (r<0)
+        panic("copy_shared_pages messed up");
+    }
+  }
 	return 0;
 }
 
