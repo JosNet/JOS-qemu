@@ -2,6 +2,8 @@
 
 #define BUFSIZ 1024		/* Find the buffer overrun bug! */
 int debug = 0;
+char history[100][100]; //100 lines of 100 chars
+int curline=0;
 
 
 // gettoken(s, 0) prepares gettoken for subsequent calls and returns 0.
@@ -308,6 +310,29 @@ umain(int argc, char **argv)
 				cprintf("EXITING\n");
 			exit();	// end of file
 		}
+
+    //for history
+    if (strncmp(buf, ":hist", 5)==0)
+    {
+      int linenum=strtol(buf+6, NULL, 0);
+      if (linenum && linenum<curline)
+      {
+        //run linenum command
+        buf=history[linenum];
+      }
+      else
+      {
+        //print out history
+        int i=curline-1;
+        for (i; i>=0; --i)
+        {
+         cprintf("\t%d  %s\n", i, history[i]);
+        }
+        continue;
+      }
+    }
+    memcpy(history[curline], buf, strlen(buf));
+    curline=(curline+1) % 100;
 		if (debug)
 			cprintf("LINE: %s\n", buf);
 		if (buf[0] == '#')
@@ -322,7 +347,7 @@ umain(int argc, char **argv)
 			cprintf("FORK: %d\n", r);
 		if (r == 0) {
 			runcmd(buf);
-			exit();
+      exit();
 		} else
 			wait(r);
 	}
