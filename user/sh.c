@@ -25,7 +25,8 @@ runcmd(char* s)
 {
 	char *argv[MAXARGS], *t, argv0buf[BUFSIZ];
 	int argc, c, i, r, p[2], fd, pipe_child;
-
+	int id;
+	
 	pipe_child = 0;
 	gettoken(s, 0);
 
@@ -114,6 +115,30 @@ again:
 			panic("| not implemented");
 			break;
 
+		case '&': //run in the background
+			id=fork();
+			if (id==0)
+			{
+			 goto runit;
+			}
+			else
+			{
+			 cprintf("[%d] ", id);
+			 exit();
+			}
+			break;
+		case ';':
+			id=fork();
+			if (id==0)
+			{
+			  goto runit;
+			}
+			else
+			{
+			  wait(id);
+			  goto again;
+			}
+			break;
 		case 0:		// String is complete
 			// Run the current command!
 			goto runit;
@@ -315,10 +340,11 @@ umain(int argc, char **argv)
     if (strncmp(buf, ":hist", 5)==0)
     {
       int linenum=strtol(buf+6, NULL, 0);
-      if (linenum && linenum<curline)
+      if (linenum && linenum<(curline+1))
       {
         //run linenum command
-        buf=history[linenum];
+	memset(buf+6, 0, 1); //this is because readline is lazy and doesn't clear its buffers!
+        buf=history[linenum-1];
       }
       else
       {
@@ -326,7 +352,7 @@ umain(int argc, char **argv)
         int i=curline-1;
         for (i; i>=0; --i)
         {
-         cprintf("\t%d  %s\n", i, history[i]);
+         cprintf("\t%d  %s\n", i+1, history[i]);
         }
         continue;
       }
@@ -345,11 +371,17 @@ umain(int argc, char **argv)
 			panic("fork: %e", r);
 		if (debug)
 			cprintf("FORK: %d\n", r);
-		if (r == 0) {
+		if (r == 0) 
+		{
+			//child runs
 			runcmd(buf);
-      exit();
-		} else
+		        exit();
+		} 
+		else
+		{
+			//parent waits
 			wait(r);
+		}
 	}
 }
 
