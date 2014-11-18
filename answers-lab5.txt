@@ -1,0 +1,10 @@
+Question 1:
+	After putting the FS I/O privelage in the trap frame I don't need to worry about it getting saved and restored properly because that's handled by runenv()
+	and it's trapframe restoring facilities.
+
+Challenge!
+	I decided to make my shell more useful. First I added a shell history command that simply stores the last 100 lines in a buffer. You can replay whichever line you want.
+	use :hist for displaying the lines and then use :hist x to replay x linenum.
+	
+	Next I added backround processes to the shell with the & character. I simply extended the runcmd() function to support this case
+	Same deal with the ';' to run multiple commands on the same line.

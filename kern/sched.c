@@ -5,7 +5,27 @@
 #include <kern/pmap.h>
 #include <kern/monitor.h>
 
+#define RR_SCHEDULER
+//#define LOTTERY_SCHEDULER
+//#define INDEXED_SCHEDULER
 void sched_halt(void);
+extern int priority_sums;
+
+//code I got on the internet to approximate a RNG
+uint32_t xor128(void) {
+  static uint32_t x = 0xdeadbeef;
+  static uint32_t y = 0xcafebffe;
+  static uint32_t z = 0x698D;
+  static uint32_t w = 0xABCD69;
+  uint32_t t;
+
+  t = x ^ (x << 11);
+  x = y; y = z; z = w;
+  return w = w ^ (w >> 19) ^ (t ^ (t >> 8));
+}
+
+
+
 
 // Choose a user environment to run and run it.
 void
@@ -29,7 +49,107 @@ sched_yield(void)
 	// below to halt the cpu.
 
 	// LAB 4: Your code here.
+  idle = thiscpu->cpu_env;
+  int startenvid=0;
+  if (idle)
+  {
+    startenvid=ENVX(idle->env_id);
+  }
+  int i = startenvid+1;
+  if (startenvid==(NENV-1))
+  {
+    i=0;
+  }
+#ifdef RR_SCHEDULER
+  int count=0;
+  for ( ; i != startenvid; i = (i+1) % NENV)
+  {
+    //cprintf("env id: %d status: %d\n", i, envs[i].env_status);
+   // if (!&envs[i])
+  //    break;
+    if (envs[i].env_status == ENV_RUNNABLE){
+ //     cprintf("running env %d\n", i);
+//      cprintf("\t\tcpunum:%d count:%d\n", cpunum(), count);
+      env_run(&envs[i]);
+      return;
+    }
+    ++count;
+  }
+  if (startenvid==0 && &envs[0] && envs[0].env_status==ENV_RUNNABLE)
+  {
+    env_run(&envs[0]);
+    return;
+  }
+  if (idle && (idle->env_status == ENV_RUNNING || idle->env_status==ENV_RUNNABLE)){
+    env_run(idle);
+    return;
+  }
+#endif
+#ifdef LOTTERY_SCHEDULER
+  //lottery scheduler
+//  cprintf("lottery scheduler, %d\n", priority_sums);
+  if (priority_sums<=0)
+  {
+    //there are no envs
+  //  cprintf("no envs left\n");
+    sched_halt();
+  }
+  int ticket=(xor128() % priority_sums)+1; //ding ding!
+  //cprintf("ticket is %d\n", ticket);
+  for (; i!=startenvid; i=(i+1)%NENV)
+  {
+    if (&envs[i] && (envs[i].env_status==ENV_RUNNABLE))
+    {
+      ticket-=envs[i].priority;
+      if (ticket<=0)
+      {
+    //    cprintf("running env %d\n", id);
+        env_run(&envs[i]);
+        return;
+      }
+    }
+  }
+  if (startenvid==0 && &envs[0] && envs[0].env_status==ENV_RUNNABLE)
+  {
+    env_run(&envs[0]);
+    return;
+  }
+  if (idle && (idle->env_status == ENV_RUNNING || idle->env_status==ENV_RUNNABLE)){
+    env_run(idle);
+    return;
+  }
+#endif
+#ifdef INDEXED_SCHEDULER
+#define RUNSIZE NENV*1
+static unsigned runstack[RUNSIZE]={-1}; //-1==invalid
+static unsigned *rsp=&runstack[RUNSIZE-2];
+if (rsp==&runstack[RUNSIZE-1])
+{
+  //now we prune
+  i=0;
+  for (;i<NENV; ++i)
+  {
+    if (envs[i].env_status==ENV_RUNNABLE)
+    {
+      --rsp;
+      *rsp=i;
+    }
+  }
+  if (idle && (idle->env_status == ENV_RUNNING || idle->env_status==ENV_RUNNABLE)){
+    env_run(idle);
+    return;
+  }
+}
+else
+{
+  //we pop and run
+  envid_t id=*rsp;
+  ++rsp;
+  env_run(&envs[id]);
+}
 
+
+#endif
 	// sched_halt never returns
 	sched_halt();
 }
@@ -48,7 +168,10 @@ sched_halt(void)
 		if ((envs[i].env_status == ENV_RUNNABLE ||
 		     envs[i].env_status == ENV_RUNNING ||
 		     envs[i].env_status == ENV_DYING))
-			break;
+    {
+     // cprintf("env %d can still run\n", i);
+      break;
+    }
 	}
 	if (i == NENV) {
 		cprintf("No runnable environments in the system!\n");

@@ -2,6 +2,8 @@
 
 #define BUFSIZ 1024		/* Find the buffer overrun bug! */
 int debug = 0;
+char history[100][100]; //100 lines of 100 chars
+int curline=0;
 
 
 // gettoken(s, 0) prepares gettoken for subsequent calls and returns 0.
@@ -23,7 +25,8 @@ runcmd(char* s)
 {
 	char *argv[MAXARGS], *t, argv0buf[BUFSIZ];
 	int argc, c, i, r, p[2], fd, pipe_child;
-
+	int id;
+	
 	pipe_child = 0;
 	gettoken(s, 0);
 
@@ -42,6 +45,7 @@ again:
 
 		case '<':	// Input redirection
 			// Grab the filename from the argument list
+      //cprintf("opening %s\n", t);
 			if (gettoken(0, &t) != 'w') {
 				cprintf("syntax error: < not followed by word\n");
 				exit();
@@ -55,7 +59,14 @@ again:
 			// then close the original 'fd'.
 
 			// LAB 5: Your code here.
-			panic("< redirection not implemented");
+			if ((fd = open(t, O_RDONLY)) < 0) {
+				cprintf("open %s for read: %e", t, fd);
+				exit();
+			}
+			if (fd != 0) {
+				dup(fd, 0);
+				close(fd);
+			}
 			break;
 
 		case '>':	// Output redirection
@@ -104,6 +115,30 @@ again:
 			panic("| not implemented");
 			break;
 
+		case '&': //run in the background
+			id=fork();
+			if (id==0)
+			{
+			 goto runit;
+			}
+			else
+			{
+			 cprintf("[%d] ", id);
+			 exit();
+			}
+			break;
+		case ';':
+			id=fork();
+			if (id==0)
+			{
+			  goto runit;
+			}
+			else
+			{
+			  wait(id);
+			  goto again;
+			}
+			break;
 		case 0:		// String is complete
 			// Run the current command!
 			goto runit;
@@ -300,6 +335,30 @@ umain(int argc, char **argv)
 				cprintf("EXITING\n");
 			exit();	// end of file
 		}
+
+    //for history
+    if (strncmp(buf, ":hist", 5)==0)
+    {
+      int linenum=strtol(buf+6, NULL, 0);
+      if (linenum && linenum<(curline+1))
+      {
+        //run linenum command
+	memset(buf+6, 0, 1); //this is because readline is lazy and doesn't clear its buffers!
+        buf=history[linenum-1];
+      }
+      else
+      {
+        //print out history
+        int i=curline-1;
+        for (i; i>=0; --i)
+        {
+         cprintf("\t%d  %s\n", i+1, history[i]);
+        }
+        continue;
+      }
+    }
+    memcpy(history[curline], buf, strlen(buf));
+    curline=(curline+1) % 100;
 		if (debug)
 			cprintf("LINE: %s\n", buf);
 		if (buf[0] == '#')
@@ -312,11 +371,17 @@ umain(int argc, char **argv)
 			panic("fork: %e", r);
 		if (debug)
 			cprintf("FORK: %d\n", r);
-		if (r == 0) {
+		if (r == 0) 
+		{
+			//child runs
 			runcmd(buf);
-			exit();
-		} else
+		        exit();
+		} 
+		else
+		{
+			//parent waits
 			wait(r);
+		}
 	}
 }
 

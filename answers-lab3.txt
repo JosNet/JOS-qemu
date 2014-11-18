@@ -1,0 +1,20 @@
+1. It's important only to distinguish between traps that push an error code
+   and those that don't.
+
+2. Softint behaved correctly right off the bat. After the page fault handler
+   falls through a general protection fault is triggered.
+
+Challenge!:
+  I did the challenge where you change the TRAPHANDLER macros. I created a
+  vectors table in the .data segment and made each entry point to a
+  traphandler in the .text segments. In this way I didn't have to
+  _individually_ name all of the trap handlers because their idt index is
+  already a good enough identifier.
+
+3. To get the breakpoint exception to work correctly I had to set the DPL of
+    SETGATE to 3 (user mode). Otherwise the kernel will trigger a general
+    protection fault due to insufficient permissions.
+4. Fault permissions are important because some cause the kernel to alter
+    memory that the user should not have permission to do directly.
+    Additionally, buggy or mailicous programs may try to abuse this behavior
+    for nefarious gains.
