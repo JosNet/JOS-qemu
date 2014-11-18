@@ -24,14 +24,15 @@ struct pci_driver {
 
 // pci_attach_class matches the class and subclass of a PCI device
 struct pci_driver pci_attach_class[] = {
-	{ PCI_CLASS_BRIDGE, PCI_SUBCLASS_BRIDGE_PCI, &pci_bridge_attach },
+	{ PCI_CLASS_BRIDGE, PCI_SUBCLASS_BRIDGE_PCI, &pci_func_enable },
 	{ 0, 0, 0 },
 };
 
 // pci_attach_vendor matches the vendor ID and device ID of a PCI device. key1
 // and key2 should be the vendor ID and device ID respectively
 struct pci_driver pci_attach_vendor[] = {
-	{ 0, 0, 0 },
+  {E1000E_VEND_ID, E1000E_DEV_ID, &pci_bridge_attach},
+  { 0, 0, 0 },
 };
 
 static void
@@ -188,7 +189,7 @@ pci_bridge_attach(struct pci_func *pcif)
 
 // External PCI subsystem interface
 
-void
+int
 pci_func_enable(struct pci_func *f)
 {
 	pci_conf_write(f, PCI_COMMAND_STATUS_REG,
@@ -245,6 +246,7 @@ pci_func_enable(struct pci_func *f)
 	cprintf("PCI function %02x:%02x.%d (%04x:%04x) enabled\n",
 		f->bus->busno, f->dev, f->func,
 		PCI_VENDOR(f->dev_id), PCI_PRODUCT(f->dev_id));
+return 0;
 }
 
 int

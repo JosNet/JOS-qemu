@@ -1,4 +1,7 @@
 #ifndef JOS_KERN_E1000_H
 #define JOS_KERN_E1000_H
 
+#define E1000E_VEND_ID 0x8086
+#define E1000E_DEV_ID 0x100E
+
 #endif	// JOS_KERN_E1000_H
