@@ -11,6 +11,8 @@
 #include <kern/monitor.h>
 #include <kern/kdebug.h>
 #include <kern/trap.h>
+#include <kern/env.h>
+#include <kern/sched.h>
 
 #define CMDBUF_SIZE	80	// enough for one VGA text line
 
@@ -31,11 +33,20 @@ static struct Command commands[] = {
   {"showmapps", "Show kernel page mappings from a to b", mon_showmappings},
   {"paperm", "Change the permissions of page at va", mon_changepage},
   {"memdump", "dump memory at pa/va", mon_memdump},
- // {"sh", "start the shell and do work", mon_sh_start},
+  {"sh", "start the shell and do work", mon_sh_start},
 };
 #define NCOMMANDS (sizeof(commands)/sizeof(commands[0]))
 
 /***** Implementations of basic kernel monitor commands *****/
+
+int
+mon_sh_start(int argc, char **argv, struct Trapframe *tf)
+{
+  ENV_CREATE(user_icode,ENV_TYPE_USER);
+  sched_yield();
+  panic("mon_sh_start returned!!!");
+  return 0;
+}
 
 int
 mon_help(int argc, char **argv, struct Trapframe *tf)
@@ -243,7 +254,7 @@ monitor(struct Trapframe *tf)
 		print_trapframe(tf);
 
 	while (1) {
-		buf = readline("K> ");
+		buf = readline("8==D~ ");
 		if (buf != NULL)
 			if (runcmd(buf, tf) < 0)
 				break;

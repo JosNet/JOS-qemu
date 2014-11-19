@@ -6,6 +6,7 @@ umain(int argc, char **argv)
 	int fd, n, r;
 	char buf[512+1];
 
+  close_all();
 	binaryname = "icode";
 
 	cprintf("icode startup\n");
