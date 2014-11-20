@@ -26,6 +26,14 @@ e1000e_init(struct pci_func *f)
 
 int e1000e_tx_init()
 {
+  //first init tx ring buffer and tx desc buffers
+  int i;
+  for (i=0; i<TX_ARRAY_SIZE; ++i)
+  {
+    struct tx_desc template;
+    template.addr=PADDR(tx_desc_buffers[i]);
+    template.length=0;
+  }
   int zero=0;
   //put addr of ring buffer on the nic
   int tx_ring_paddr=PADDR(tx_ring_buffer);
