@@ -1,7 +1,7 @@
 #include <kern/e1000.h>
 #include <kern/pmap.h>
 
-volatile uint32_t *e1000e_bar0; //remember that e1000e_bar0[1]==*(e1000e_bar0+4)
+volatile uint32_t *e1000e_bar0; //remember that e1000e_bar0[1]==*((char*)e1000e_bar0+4)
 
 int
 e1000e_init(struct pci_func *f)
