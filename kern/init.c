@@ -86,6 +86,12 @@ i386_init(void)
   //init e1000e
   e1000e_tx_init();
 
+  //test transmit a few fake packets
+  int i;
+  for (i=0; i<1000; ++i)
+  {
+    e1000e_transmit("JOS", 3);
+  }
 	// Schedule and run the first user environment!
   sched_yield();
 }

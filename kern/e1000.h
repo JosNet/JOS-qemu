@@ -26,6 +26,12 @@
 #define E1000E_IPGR2 6<<20
 
 
+//transmit desc control values
+#define E1000E_TXDESC_CMD_EOP 0x1 //end of packet
+#define E1000E_TXDESC_CMD_RS (0x1 << 3) //report status bit
+#define E1000E_TXDESC_STATUS_DONE 0x1 //is nic done with this thing?
+
+
 #define TX_ARRAY_SIZE 24
 #define TX_BUFFER_SIZE 1583 //maximum size of tx desc data
 
@@ -43,4 +49,5 @@ struct tx_desc
 
 int e1000e_init(struct pci_func *f);
 int e1000e_tx_init();
+int e1000e_transmit(char* data, int size);
 #endif	// JOS_KERN_E1000_H
