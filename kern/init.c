@@ -16,6 +16,7 @@
 #include <kern/spinlock.h>
 #include <kern/time.h>
 #include <kern/pci.h>
+#include <kern/e1000.h>
 
 static void boot_aps(void);
 
@@ -38,6 +39,7 @@ i386_init(void)
 
 	// Lab 2 memory management initialization functions
 	mem_init();
+
 
 	// Lab 3 user environment initialization functions
 	env_init();
@@ -80,6 +82,9 @@ i386_init(void)
 
 	// Should not be necessary - drains keyboard because interrupt has given up.
 	kbd_intr();
+
+  //init e1000e
+  e1000e_tx_init();
 
 	// Schedule and run the first user environment!
   sched_yield();
