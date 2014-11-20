@@ -31,7 +31,7 @@ struct pci_driver pci_attach_class[] = {
 // pci_attach_vendor matches the vendor ID and device ID of a PCI device. key1
 // and key2 should be the vendor ID and device ID respectively
 struct pci_driver pci_attach_vendor[] = {
-  {E1000E_VEND_ID, E1000E_DEV_ID, &pci_func_enable},
+  {E1000E_VEND_ID, E1000E_DEV_ID, &e1000e_func_enable},
   { 0, 0, 0 },
 };
 
@@ -247,6 +247,67 @@ pci_func_enable(struct pci_func *f)
 		f->bus->busno, f->dev, f->func,
 		PCI_VENDOR(f->dev_id), PCI_PRODUCT(f->dev_id));
 return 0;
+}
+
+int
+e1000e_func_enable(struct pci_func *f)
+{
+	pci_conf_write(f, PCI_COMMAND_STATUS_REG,
+		       PCI_COMMAND_IO_ENABLE |
+		       PCI_COMMAND_MEM_ENABLE |
+		       PCI_COMMAND_MASTER_ENABLE);
+
+	uint32_t bar_width;
+	uint32_t bar;
+	for (bar = PCI_MAPREG_START; bar < PCI_MAPREG_END;
+	     bar += bar_width)
+	{
+		uint32_t oldv = pci_conf_read(f, bar);
+
+		bar_width = 4;
+		pci_conf_write(f, bar, 0xffffffff);
+		uint32_t rv = pci_conf_read(f, bar);
+
+		if (rv == 0)
+			continue;
+
+		int regnum = PCI_MAPREG_NUM(bar);
+		uint32_t base, size;
+		if (PCI_MAPREG_TYPE(rv) == PCI_MAPREG_TYPE_MEM) {
+			if (PCI_MAPREG_MEM_TYPE(rv) == PCI_MAPREG_MEM_TYPE_64BIT)
+				bar_width = 8;
+
+			size = PCI_MAPREG_MEM_SIZE(rv);
+			base = PCI_MAPREG_MEM_ADDR(oldv);
+			if (pci_show_addrs)
+				cprintf("  mem region %d: %d bytes at 0x%x\n",
+					regnum, size, base);
+		} else {
+			size = PCI_MAPREG_IO_SIZE(rv);
+			base = PCI_MAPREG_IO_ADDR(oldv);
+			if (pci_show_addrs)
+				cprintf("  io region %d: %d bytes at 0x%x\n",
+					regnum, size, base);
+		}
+
+		pci_conf_write(f, bar, oldv);
+		f->reg_base[regnum] = base;
+		f->reg_size[regnum] = size;
+
+		if (size && !base)
+			cprintf("PCI device %02x:%02x.%d (%04x:%04x) "
+				"may be misconfigured: "
+				"region %d: base 0x%x, size %d\n",
+				f->bus->busno, f->dev, f->func,
+				PCI_VENDOR(f->dev_id), PCI_PRODUCT(f->dev_id),
+				regnum, base, size);
+	}
+
+	cprintf("PCI function %02x:%02x.%d (%04x:%04x) enabled\n",
+		f->bus->busno, f->dev, f->func,
+		PCI_VENDOR(f->dev_id), PCI_PRODUCT(f->dev_id));
+  e1000e_init(f);
+  return 0;
 }
 
 int

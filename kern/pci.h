@@ -29,5 +29,6 @@ struct pci_bus {
 
 int  pci_init(void);
 int pci_func_enable(struct pci_func *f);
+int e1000e_func_enable(struct pci_func *f);
 
 #endif
