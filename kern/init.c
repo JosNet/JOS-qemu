@@ -63,6 +63,16 @@ i386_init(void)
 	lock_kernel();
   boot_aps();
 
+  //init e1000e
+  e1000e_tx_init();
+
+
+  //int i;
+  //for (i=0; i<10; ++i)
+  //{
+   // e1000e_transmit("JOS", 3);
+ // }
+
 	// Start fs.
 	ENV_CREATE(fs_fs, ENV_TYPE_FS);
 
@@ -83,15 +93,6 @@ i386_init(void)
 	// Should not be necessary - drains keyboard because interrupt has given up.
 	kbd_intr();
 
-  //init e1000e
-  e1000e_tx_init();
-
-  //test transmit a few fake packets
-  int i;
-  for (i=0; i<1000; ++i)
-  {
-    e1000e_transmit("JOS", 3);
-  }
 	// Schedule and run the first user environment!
   sched_yield();
 }

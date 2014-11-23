@@ -12,6 +12,7 @@
 #include <kern/console.h>
 #include <kern/sched.h>
 #include <kern/time.h>
+#include <kern/e1000.h>
 extern int priority_sums;
 
 // Print a string to the system console.
@@ -423,6 +424,12 @@ sys_time_msec(void)
   panic("sys_time_msec not implemented");
 }
 
+static int
+sys_nic_transmit(void* data, int len)
+{
+  return e1000e_transmit((char*)data, len);
+}
+
 // Dispatches to the correct kernel function, passing the arguments.
 int32_t
 syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, uint32_t a5)
@@ -477,6 +484,9 @@ syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, 
       break;
     case SYS_time_msec:
       return sys_time_msec();
+      break;
+    case SYS_nic_transmit:
+      return sys_nic_transmit((void*)a1, (int)a2);
       break;
     default:
 		  return -E_NO_SYS;

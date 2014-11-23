@@ -15,9 +15,10 @@
 
 //TCTL tx enable control values
 #define E1000E_TCTL_ENABLE 0x2 //TCTL enable bit
-#define E1000E_PSP 0x8 //TCTL pad short packets
-#define E1000E_CTL (0x10 << 4) //TCTL collision threshold
+#define E1000E_PSP (0x1 << 3) //TCTL pad short packets
+#define E1000E_CTL (0x0F << 4) //TCTL collision threshold
 #define E1000E_COLD (0x40 << 12) //TCTL collision distance
+#define E1000E_RTLC (0x1 << 24) //retransmit on late collision
 
 
 //TIPG tx IEEE802.3 control values
@@ -32,8 +33,8 @@
 #define E1000E_TXDESC_STATUS_DONE 0x1 //is nic done with this thing?
 
 
-#define TX_ARRAY_SIZE 24
-#define TX_BUFFER_SIZE 1583 //maximum size of tx desc data
+#define TX_ARRAY_SIZE 8
+#define TX_BUFFER_SIZE 2000 //maximum size of tx desc data
 
 
 struct tx_desc

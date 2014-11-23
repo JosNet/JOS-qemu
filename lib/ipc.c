@@ -73,7 +73,7 @@ ipc_send(envid_t to_env, uint32_t val, void *pg, int perm)
     }
     else if (r==-E_IPC_NOT_RECV)
     {
-      //sys_yield(); //lets not hog all of the cpu time
+      sys_yield(); //lets not hog all of the cpu time
     }
     else
     {

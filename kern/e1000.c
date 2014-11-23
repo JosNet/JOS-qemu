@@ -3,18 +3,25 @@
 
 #include <kern/e1000.h>
 #include <kern/pmap.h>
+#include <kern/sched.h>
 
 volatile uint32_t *e1000e_bar0; //remember that e1000e_bar0[1]==*((char*)e1000e_bar0+4)
 
 char tx_desc_buffers[TX_ARRAY_SIZE][TX_BUFFER_SIZE]; //each tx desc in the ring buffer needs a data buffer
 struct tx_desc tx_ring_buffer[TX_ARRAY_SIZE]; //size must be multiple of 8 to be 128byte aligned
-int txtail=0; //tail pointer. an index into the ring buffer
+int txtail=1; //tail pointer. an index into the ring buffer
 
 
 static void
 bar_write(unsigned addr, void* data, int size)
 {
   memcpy((char*)e1000e_bar0+addr, data, size);
+}
+
+static void
+bar_read(unsigned addr, void* data, int size)
+{
+  memcpy(data, (char*)e1000e_bar0+addr, size);
 }
 
 int
@@ -61,7 +68,7 @@ e1000e_tx_init()
   bar_write(E1000E_TDT, &one, 4);
 
   //set up control reg
-  int control=E1000E_TCTL_ENABLE|E1000E_PSP|E1000E_CTL|E1000E_COLD;
+  int control=E1000E_TCTL_ENABLE|E1000E_PSP|E1000E_CTL|E1000E_COLD|E1000E_CTL|E1000E_RTLC;
   bar_write(E1000E_TCTL, &control, 4);
 
   //set up TIPG reg
@@ -79,21 +86,20 @@ e1000e_transmit(char* data, int size)
   if (size>=TX_BUFFER_SIZE)
   {
     //hahahaha feature not supported yet ;)
-    //cprintf("not supported\n");
+    cprintf("not supported\n");
     return -1;
   }
-  else if (!(tx_ring_buffer[(txtail+1)%TX_ARRAY_SIZE].status & E1000E_TXDESC_STATUS_DONE))
+  else if (!(tx_ring_buffer[txtail].status & E1000E_TXDESC_STATUS_DONE))
   {
     //queue is full hold off a bit
-    //cprintf("queue full\n");
+    cprintf("queue full\n");
     return -1;
   }
   else
   {
     //good to go
-    txtail=(txtail+1)%TX_ARRAY_SIZE; //increment txtail
     struct tx_desc *curdesc=&tx_ring_buffer[txtail]; //grab a ptr to the desc
-    //memset(tx_desc_buffers[txtail], 0, TX_BUFFER_SIZE); //clear the buffer
+    memset(tx_desc_buffers[txtail], 0, TX_BUFFER_SIZE); //clear the buffer
     memcpy(tx_desc_buffers[txtail], data, size); //copy data into it
     //update fields
     curdesc->length=size;
@@ -103,9 +109,14 @@ e1000e_transmit(char* data, int size)
     curdesc->css=0;
     curdesc->special=0;
 
+    unsigned int oldtail=txtail;
+    txtail=(txtail+1)%TX_ARRAY_SIZE; //increment txtail
     //now update tail on the nic
-    bar_write(E1000E_TDT, &txtail, sizeof(int));
-    //cprintf("sent %d\n", size);
+    bar_write(E1000E_TDT, &txtail, 4);
+    unsigned int curtail;
+    bar_read(E1000E_TDT, &curtail, 4);
+    if (curtail!=txtail)
+      panic("tails don't match");
     return size;
   }
   panic("e1000e transmit unexpected state");
