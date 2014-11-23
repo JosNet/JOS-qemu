@@ -99,7 +99,7 @@ e1000e_transmit(char* data, int size)
   {
     //good to go
     struct tx_desc *curdesc=&tx_ring_buffer[txtail]; //grab a ptr to the desc
-    memset(tx_desc_buffers[txtail], 0, TX_BUFFER_SIZE); //clear the buffer
+    //memset(tx_desc_buffers[txtail], 0, TX_BUFFER_SIZE); //clear the buffer
     memcpy(tx_desc_buffers[txtail], data, size); //copy data into it
     //update fields
     curdesc->length=size;
@@ -113,10 +113,12 @@ e1000e_transmit(char* data, int size)
     txtail=(txtail+1)%TX_ARRAY_SIZE; //increment txtail
     //now update tail on the nic
     bar_write(E1000E_TDT, &txtail, 4);
+    /*
     unsigned int curtail;
     bar_read(E1000E_TDT, &curtail, 4);
     if (curtail!=txtail)
       panic("tails don't match");
+      */
     return size;
   }
   panic("e1000e transmit unexpected state");
