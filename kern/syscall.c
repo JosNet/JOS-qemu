@@ -430,6 +430,12 @@ sys_nic_transmit(void* data, int len)
   return e1000e_transmit((char*)data, len);
 }
 
+static int
+sys_nic_receive(void* buf, int len)
+{
+  return e1000e_recv((char*)buf, len);
+}
+
 // Dispatches to the correct kernel function, passing the arguments.
 int32_t
 syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, uint32_t a5)
@@ -487,6 +493,9 @@ syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, 
       break;
     case SYS_nic_transmit:
       return sys_nic_transmit((void*)a1, (int)a2);
+      break;
+    case SYS_nic_receive:
+      return sys_nic_receive((void*)a1, (int)a2);
       break;
     default:
 		  return -E_NO_SYS;

@@ -11,6 +11,10 @@ char tx_desc_buffers[TX_ARRAY_SIZE][TX_BUFFER_SIZE]; //each tx desc in the ring 
 struct tx_desc tx_ring_buffer[TX_ARRAY_SIZE]; //size must be multiple of 8 to be 128byte aligned
 int txtail=1; //tail pointer. an index into the ring buffer
 
+char rx_desc_buffers[RX_ARRAY_SIZE][RX_BUFFER_SIZE]; //each rx desc in the ring buffer needs a data buffer
+struct rx_desc rx_ring_buffer[RX_ARRAY_SIZE]; //size must be multiple of 8 to be 128byte aligned
+int rxtail=1; //tail pointer. an index into the ring buffer
+
 
 static void
 bar_write(unsigned addr, void* data, int size)
@@ -76,6 +80,58 @@ e1000e_tx_init()
   bar_write(E1000E_TIPG, &control, 4);
   return 0;
 }
+
+int
+e1000e_rx_init()
+{
+  //first init rx ring buffer and rx desc buffers
+  int i;
+  for (i=0; i<RX_ARRAY_SIZE; ++i)
+  {
+    struct rx_desc template;
+    template.addr=PADDR(rx_desc_buffers[i]);
+    template.length=0;
+    template.checksum=0;
+    template.status=1;
+    if (i==0)
+      template.status=0;
+    template.errors=0;
+    template.special=0; //you're not special
+
+    memset(rx_desc_buffers[i], 0, RX_BUFFER_SIZE);
+    rx_ring_buffer[i]=template;
+  }
+  int zero=0;
+  int one=1;
+
+  //put MAC addr in RAL0 and RAH0
+  uint32_t mac_h=MAC_HIGH_BITS|(0x80000000);
+  uint32_t mac_l=MAC_LOW_BITS;
+  bar_write(E1000E_RAL0, &mac_l, 4);
+  bar_write(E1000E_RAH0, &mac_h, 4);
+
+  //disable interrupts
+  bar_write(E1000E_IMS, &zero, 4);
+
+  //put addr of ring buffer on the nic
+  int rx_ring_paddr=PADDR(rx_ring_buffer);
+  bar_write(E1000E_RDBAL, &rx_ring_paddr, 4);
+  bar_write(E1000E_RDBAH, &zero, 4);
+
+  //put length of ring buffer on the nic
+  int ringsize=RX_ARRAY_SIZE*sizeof(struct rx_desc);
+  bar_write(E1000E_RDLEN, &ringsize, 4);
+
+  //init head and tail
+  bar_write(E1000E_RDH, &zero, 4);
+  bar_write(E1000E_RDT, &one, 4);
+
+  //set up control reg
+  int control=E1000E_RCTL_EN|E1000E_RCTL_BAM|E1000E_RCTL_BSIZE|E1000E_RCTL_BSEX|E1000E_RCTL_SECRC;
+  bar_write(E1000E_RCTL, &control, 4);
+
+  return 0;
+}
 /*
  *on success: returns bytes put into ring buffer
  *on failure: returns -1 (probably means txqueue is full)
@@ -92,7 +148,7 @@ e1000e_transmit(char* data, int size)
   else if (!(tx_ring_buffer[txtail].status & E1000E_TXDESC_STATUS_DONE))
   {
     //queue is full hold off a bit
-    cprintf("queue full\n");
+    cprintf("tx queue full\n");
     return -1;
   }
   else
@@ -109,7 +165,7 @@ e1000e_transmit(char* data, int size)
     curdesc->css=0;
     curdesc->special=0;
 
-    unsigned int oldtail=txtail;
+//    unsigned int oldtail=txtail;
     txtail=(txtail+1)%TX_ARRAY_SIZE; //increment txtail
     //now update tail on the nic
     bar_write(E1000E_TDT, &txtail, 4);
@@ -124,3 +180,56 @@ e1000e_transmit(char* data, int size)
   panic("e1000e transmit unexpected state");
 }
 
+/*
+ *put len bytes into buf
+ *if not EOP recurse until it is EOP
+ *on success: returns length of bytes transferred
+ *on failure: returns -1
+ * */
+int
+e1000e_recv(char* buf, int len)
+{
+  if (len<RX_BUFFER_SIZE)
+  {
+    //hahahaha feature not supported yet ;)
+    cprintf("not supported\n");
+    return -1;
+  }
+  else if (!(rx_ring_buffer[rxtail].status & E1000E_RXDESC_STATUS_OK))
+  {
+    //queue is full hold off a bit
+    cprintf("rx queue full %d\n", rxtail);
+    return -1;
+  }
+  else
+  {
+    //good to go
+    struct rx_desc *curdesc=&rx_ring_buffer[rxtail]; //grab a ptr to the desc
+    int eop=curdesc->status & E1000E_RXDESC_STATUS_EOP;
+    int length=curdesc->length;
+    cprintf("%s\n", &rx_desc_buffers[rxtail]);
+    memcpy(buf, rx_desc_buffers[rxtail], length); //copy data into it
+    //update fields
+    curdesc->length=0;
+    curdesc->checksum=0;
+    curdesc->status=0;
+    curdesc->errors=0;
+    curdesc->special=0;
+
+    rxtail=(rxtail+1)%RX_ARRAY_SIZE; //increment rxtail
+    //now update tail on the nic
+    bar_write(E1000E_RDT, &rxtail, 4);
+    if (!eop)
+    {
+      int retval=e1000e_recv(buf+length, len-length);
+      if (retval<0)
+        return retval;
+      return length+retval;
+    }
+    else
+    {
+      return length;
+    }
+  }
+  panic("e1000e receive unexpected state");
+}

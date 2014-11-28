@@ -33,9 +33,31 @@
 #define E1000E_TXDESC_STATUS_DONE 0x1 //is nic done with this thing?
 
 
-#define TX_ARRAY_SIZE 8
+#define TX_ARRAY_SIZE 32
 #define TX_BUFFER_SIZE 2000 //maximum size of tx desc data
 
+#define RX_ARRAY_SIZE 128
+#define RX_BUFFER_SIZE 2048 //maximum size of rx desc data
+
+//rx control values
+#define MAC_HIGH_BITS 0x00005634
+#define MAC_LOW_BITS 0x12005452
+#define E1000E_RAL0 0x5400            //receive addr low bits
+#define E1000E_RAH0 0x5404            //receive addr high bits
+#define E1000E_IMS 0xD0               //interrupt set register
+#define E1000E_RDBAL 0x2800           //receive base addr low
+#define E1000E_RDBAH 0x2804           //receive base addr high
+#define E1000E_RDLEN 0x2808           //length in bytes of ring buffer
+#define E1000E_RDH 0x2810             //receive descriptor HEAD
+#define E1000E_RDT 0x2818             //receive descriptor TAIL
+#define E1000E_RCTL 0x100             //receive control reg
+#define E1000E_RCTL_EN (1<<1)         //receive enable
+#define E1000E_RCTL_BAM (1<<15)       //receive broadcasts
+#define E1000E_RCTL_BSIZE (0x00 << 16) //receive buffer size
+#define E1000E_RCTL_BSEX (0x0 << 25)  //receive buffer size extension
+#define E1000E_RCTL_SECRC (0x1 << 26) //strip crc from receive packet
+#define E1000E_RXDESC_STATUS_OK 0x1   //is nic done using this thing?
+#define E1000E_RXDESC_STATUS_EOP 0x2  //is this the last chunk of packet?
 
 struct tx_desc
 {
@@ -48,7 +70,19 @@ struct tx_desc
   uint16_t special; //speshul
 };
 
+struct rx_desc
+{
+  uint64_t addr;     //host buffer address
+  uint16_t length;   //length of data
+  uint16_t checksum; //packet checksum
+  uint8_t status;    //status field
+  uint8_t errors;    //errors field
+  uint16_t special;  //speshul
+};
+
 int e1000e_init(struct pci_func *f);
 int e1000e_tx_init();
+int e1000e_rx_init();
 int e1000e_transmit(char* data, int size);
+int e1000e_recv(char* buf, int len);
 #endif	// JOS_KERN_E1000_H

@@ -123,6 +123,12 @@ sys_nic_transmit(void* data, int len)
   return syscall(SYS_nic_transmit, 0, (uint32_t)data, (uint32_t)len, 0, 0, 0);
 }
 
+int
+sys_nic_receive(void* buf, int len)
+{
+  return syscall(SYS_nic_receive, 0, (uint32_t)buf, (uint32_t)len, 0, 0, 0);
+}
+
 unsigned int
 sys_time_msec(void)
 {

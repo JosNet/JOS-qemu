@@ -65,6 +65,7 @@ i386_init(void)
 
   //init e1000e
   e1000e_tx_init();
+  e1000e_rx_init();
 
 
   //int i;
