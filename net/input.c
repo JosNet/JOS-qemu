@@ -3,6 +3,8 @@
 
 extern union Nsipc nsipcbuf;
 
+char buffer[PGSIZE];
+
 void
 input(envid_t ns_envid)
 {
@@ -15,19 +17,19 @@ input(envid_t ns_envid)
 	// reading from it for a while, so don't immediately receive
 	// another packet in to the same physical page.
 	cprintf("input started\n");
-  sys_page_alloc(0, PACKET_PAGE_RECV, PTE_P | PTE_W | PTE_U);
+  //sys_page_alloc(0, PACKET_PAGE_RECV, PTE_P | PTE_W | PTE_U);
   while (1)
   {
-    nsipcbuf.pkt.jp_len=sys_nic_receive(&nsipcbuf.pkt.jp_data[0], PGSIZE);
+    //nsipcbuf.pkt.jp_len=sys_nic_receive(&nsipcbuf.pkt.jp_data[0], PGSIZE);
+    nsipcbuf.pkt.jp_len=sys_nic_receive(buffer, PGSIZE);
     if (nsipcbuf.pkt.jp_len<0)
     {
       sys_yield();
       continue;
     }
-    cprintf("recv got %s\n", &nsipcbuf.pkt.jp_data[0]);
-    memcpy(PACKET_PAGE_RECV, &nsipcbuf, PGSIZE);
-    ipc_send(ns_envid, 0x666, PACKET_PAGE_RECV, PTE_P|PTE_W|PTE_U);
-    sys_yield();
+    cprintf("recv got %s\n", buffer);
+    //memcpy(PACKET_PAGE_RECV, &nsipcbuf, PGSIZE);
+    //ipc_send(ns_envid, 0x0, PACKET_PAGE_RECV, PTE_P|PTE_W|PTE_U);
     sys_yield();
   }
 }

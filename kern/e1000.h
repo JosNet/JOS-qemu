@@ -34,10 +34,10 @@
 
 
 #define TX_ARRAY_SIZE 32
-#define TX_BUFFER_SIZE 2000 //maximum size of tx desc data
+#define TX_BUFFER_SIZE 2048 //maximum size of tx desc data
 
-#define RX_ARRAY_SIZE 128
-#define RX_BUFFER_SIZE 2048 //maximum size of rx desc data
+#define RX_ARRAY_SIZE 32
+#define RX_BUFFER_SIZE 4096 //maximum size of rx desc data
 
 //rx control values
 #define MAC_HIGH_BITS 0x00005634
@@ -52,12 +52,16 @@
 #define E1000E_RDT 0x2818             //receive descriptor TAIL
 #define E1000E_RCTL 0x100             //receive control reg
 #define E1000E_RCTL_EN (1<<1)         //receive enable
+#define E1000E_RCTL_UPE (1<<3)        //receive unicast promiscuous
+#define E1000E_RCTL_MPE (1<<4)        //receive multicast promiscuous
 #define E1000E_RCTL_BAM (1<<15)       //receive broadcasts
-#define E1000E_RCTL_BSIZE (0x00 << 16) //receive buffer size
-#define E1000E_RCTL_BSEX (0x0 << 25)  //receive buffer size extension
+#define E1000E_RCTL_BSIZE (0x3 << 16) //receive buffer size
+#define E1000E_RCTL_BSEX (0x1 << 25)  //receive buffer size extension
 #define E1000E_RCTL_SECRC (0x1 << 26) //strip crc from receive packet
 #define E1000E_RXDESC_STATUS_OK 0x1   //is nic done using this thing?
 #define E1000E_RXDESC_STATUS_EOP 0x2  //is this the last chunk of packet?
+#define E1000E_MTA_START 0x5200       //first reg in MTA array
+#define E1000E_MTA_END 0x53FC         //last reg in MTA array
 
 struct tx_desc
 {
@@ -68,7 +72,7 @@ struct tx_desc
   uint8_t status;   //status field
   uint8_t css;      //checksum start field
   uint16_t special; //speshul
-};
+}__attribute__((aligned(0x10)));
 
 struct rx_desc
 {
@@ -78,7 +82,7 @@ struct rx_desc
   uint8_t status;    //status field
   uint8_t errors;    //errors field
   uint16_t special;  //speshul
-};
+}__attribute__((aligned(0x10)));
 
 int e1000e_init(struct pci_func *f);
 int e1000e_tx_init();

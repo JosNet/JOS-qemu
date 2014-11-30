@@ -9,10 +9,10 @@ volatile uint32_t *e1000e_bar0; //remember that e1000e_bar0[1]==*((char*)e1000e_
 
 char tx_desc_buffers[TX_ARRAY_SIZE][TX_BUFFER_SIZE]; //each tx desc in the ring buffer needs a data buffer
 struct tx_desc tx_ring_buffer[TX_ARRAY_SIZE]; //size must be multiple of 8 to be 128byte aligned
-int txtail=1; //tail pointer. an index into the ring buffer
 
 char rx_desc_buffers[RX_ARRAY_SIZE][RX_BUFFER_SIZE]; //each rx desc in the ring buffer needs a data buffer
 struct rx_desc rx_ring_buffer[RX_ARRAY_SIZE]; //size must be multiple of 8 to be 128byte aligned
+int txtail=1; //tail pointer. an index into the ring buffer
 int rxtail=1; //tail pointer. an index into the ring buffer
 
 
@@ -110,6 +110,12 @@ e1000e_rx_init()
   bar_write(E1000E_RAL0, &mac_l, 4);
   bar_write(E1000E_RAH0, &mac_h, 4);
 
+  //init MTA to 0
+  for (i=E1000E_MTA_START; i<=E1000E_MTA_END; ++i)
+  {
+    bar_write(i, &zero, 4);
+  }
+
   //disable interrupts
   bar_write(E1000E_IMS, &zero, 4);
 
@@ -120,6 +126,8 @@ e1000e_rx_init()
 
   //put length of ring buffer on the nic
   int ringsize=RX_ARRAY_SIZE*sizeof(struct rx_desc);
+  if (ringsize % 128)
+    panic("\n\nringsize not 128byte aligned\n\n");
   bar_write(E1000E_RDLEN, &ringsize, 4);
 
   //init head and tail
@@ -127,7 +135,7 @@ e1000e_rx_init()
   bar_write(E1000E_RDT, &one, 4);
 
   //set up control reg
-  int control=E1000E_RCTL_EN|E1000E_RCTL_BAM|E1000E_RCTL_BSIZE|E1000E_RCTL_BSEX|E1000E_RCTL_SECRC;
+  int control=E1000E_RCTL_EN|E1000E_RCTL_BAM|E1000E_RCTL_BSIZE|E1000E_RCTL_BSEX|E1000E_RCTL_SECRC;//|E1000E_RCTL_UPE;//|E1000E_RCTL_MPE;
   bar_write(E1000E_RCTL, &control, 4);
 
   return 0;
@@ -198,16 +206,17 @@ e1000e_recv(char* buf, int len)
   else if (!(rx_ring_buffer[rxtail].status & E1000E_RXDESC_STATUS_OK))
   {
     //queue is full hold off a bit
-    cprintf("rx queue full %d\n", rxtail);
+    //cprintf("rx queue empty %d\n", rxtail);
     return -1;
   }
   else
   {
     //good to go
+    cprintf("rx status OK tail:%d\n", rxtail);
     struct rx_desc *curdesc=&rx_ring_buffer[rxtail]; //grab a ptr to the desc
     int eop=curdesc->status & E1000E_RXDESC_STATUS_EOP;
     int length=curdesc->length;
-    cprintf("%s\n", &rx_desc_buffers[rxtail]);
+//    cprintf("%s\n", &rx_desc_buffers[rxtail]);
     memcpy(buf, rx_desc_buffers[rxtail], length); //copy data into it
     //update fields
     curdesc->length=0;
@@ -221,9 +230,13 @@ e1000e_recv(char* buf, int len)
     bar_write(E1000E_RDT, &rxtail, 4);
     if (!eop)
     {
+      cprintf("going to recurse. len:%d\n", length);
       int retval=e1000e_recv(buf+length, len-length);
       if (retval<0)
+      {
+        cprintf("ret %d\n", retval);
         return retval;
+      }
       return length+retval;
     }
     else
