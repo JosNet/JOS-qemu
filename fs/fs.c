@@ -431,6 +431,21 @@ file_write(struct File *f, const void *buf, size_t count, off_t offset)
 	return count;
 }
 
+
+int	file_remove(const char *path)
+{
+  struct File *f, *dir;
+  int r;
+  r=walk_path(path, &dir, &f, 0);
+  if (r<0)
+  {
+    return -1;
+  }
+  memset(f, 0, sizeof(struct File));
+  file_flush(dir);
+  return 0;
+}
+
 // Remove a block from file f.  If it's not there, just silently succeed.
 // Returns 0 on success, < 0 on error.
 static int

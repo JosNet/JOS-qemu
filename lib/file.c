@@ -155,6 +155,19 @@ devfile_write(struct Fd *fd, const void *buf, size_t n)
 	return r;
 }
 
+int
+remove(const char* path)
+{
+  int r;
+  memmove(fsipcbuf.remove.req_path, path, strlen(path));
+  cprintf("about to ipc\n");
+  if ((r=fsipc(FSREQ_REMOVE, NULL))<0)
+  {
+    return r;
+  }
+  return 0;
+}
+
 static int
 devfile_stat(struct Fd *fd, struct Stat *st)
 {

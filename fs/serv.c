@@ -296,6 +296,12 @@ serve_sync(envid_t envid, union Fsipc *req)
 	return 0;
 }
 
+int
+serve_unlink(envid_t envid, union Fsipc* req)
+{
+  return file_remove(req->remove.req_path);
+}
+
 typedef int (*fshandler)(envid_t envid, union Fsipc *req);
 
 fshandler handlers[] = {
@@ -306,7 +312,8 @@ fshandler handlers[] = {
 	[FSREQ_FLUSH] =		(fshandler)serve_flush,
 	[FSREQ_WRITE] =		(fshandler)serve_write,
 	[FSREQ_SET_SIZE] =	(fshandler)serve_set_size,
-	[FSREQ_SYNC] =		serve_sync
+	[FSREQ_SYNC] =		serve_sync,
+  [FSREQ_REMOVE]=   serve_unlink,
 };
 #define NHANDLERS (sizeof(handlers)/sizeof(handlers[0]))
 
