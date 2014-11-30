@@ -10,7 +10,8 @@ FSOFILES := 		$(OBJDIR)/fs/ide.o \
 USERAPPS := 		$(OBJDIR)/user/init
 
 FSIMGTXTFILES :=	fs/newmotd \
-			fs/motd
+			fs/motd \
+      fs/anewfile
 
 FSIMGTXTFILES :=	$(FSIMGTXTFILES) \
 			fs/index.html
@@ -32,6 +33,8 @@ USERAPPS :=		$(USERAPPS) \
 			$(OBJDIR)/user/testpteshare \
 			$(OBJDIR)/user/testshell \
 			$(OBJDIR)/user/hello \
+			$(OBJDIR)/user/touch \
+			$(OBJDIR)/user/webserver \
 
 FSIMGTXTFILES :=	$(FSIMGTXTFILES) \
 			fs/lorem \
