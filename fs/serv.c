@@ -156,6 +156,11 @@ try_open:
 		return r;
 	}
 
+  if (req->req_omode & O_MKDIR)
+  {
+    f->f_type=1;
+  }
+  //cprintf("type:%d\n", f->f_type);
 	// Save the file pointer
 	o->o_file = f;
 

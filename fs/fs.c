@@ -354,10 +354,12 @@ file_create(const char *path, struct File **pf)
 	int r;
 	struct File *dir, *f;
 
+  //cprintf("inside file create\n");
 	if ((r = walk_path(path, &dir, &f, name)) == 0)
 		return -E_FILE_EXISTS;
 	if (r != -E_NOT_FOUND || dir == 0)
 		return r;
+  //cprintf("dir alloc file\n");
 	if ((r = dir_alloc_file(dir, &f)) < 0)
 		return r;
 

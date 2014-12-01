@@ -160,7 +160,6 @@ remove(const char* path)
 {
   int r;
   memmove(fsipcbuf.remove.req_path, path, strlen(path));
-  cprintf("about to ipc\n");
   if ((r=fsipc(FSREQ_REMOVE, NULL))<0)
   {
     return r;
