@@ -13,7 +13,7 @@ struct tx_desc tx_ring_buffer[TX_ARRAY_SIZE]; //size must be multiple of 8 to be
 char rx_desc_buffers[RX_ARRAY_SIZE][RX_BUFFER_SIZE]; //each rx desc in the ring buffer needs a data buffer
 struct rx_desc rx_ring_buffer[RX_ARRAY_SIZE]; //size must be multiple of 8 to be 128byte aligned
 int txtail=1; //tail pointer. an index into the ring buffer
-int rxtail=1; //tail pointer. an index into the ring buffer
+int rxtail=RX_ARRAY_SIZE-1; //tail pointer. an index into the ring buffer
 
 
 static void
@@ -92,9 +92,7 @@ e1000e_rx_init()
     template.addr=PADDR(rx_desc_buffers[i]);
     template.length=0;
     template.checksum=0;
-    template.status=1;
-    if (i==0)
-      template.status=0;
+    template.status=0;
     template.errors=0;
     template.special=0; //you're not special
 
@@ -131,8 +129,9 @@ e1000e_rx_init()
   bar_write(E1000E_RDLEN, &ringsize, 4);
 
   //init head and tail
+  int rdt=RX_ARRAY_SIZE-1;
   bar_write(E1000E_RDH, &zero, 4);
-  bar_write(E1000E_RDT, &one, 4);
+  bar_write(E1000E_RDT, &rdt, 4);
 
   //set up control reg
   int control=E1000E_RCTL_EN|E1000E_RCTL_BAM|E1000E_RCTL_BSIZE|E1000E_RCTL_BSEX|E1000E_RCTL_SECRC;//|E1000E_RCTL_UPE;//|E1000E_RCTL_MPE;
@@ -197,26 +196,23 @@ e1000e_transmit(char* data, int size)
 int
 e1000e_recv(char* buf, int len)
 {
-  if (len<RX_BUFFER_SIZE)
-  {
-    //hahahaha feature not supported yet ;)
-    cprintf("not supported\n");
-    return -1;
-  }
-  else if (!(rx_ring_buffer[rxtail].status & E1000E_RXDESC_STATUS_OK))
+  int newtail=(rxtail+1) % RX_ARRAY_SIZE;
+  if (!(rx_ring_buffer[newtail].status & E1000E_RXDESC_STATUS_OK))
   {
     //queue is full hold off a bit
-    //cprintf("rx queue empty %d\n", rxtail);
+    //cprintf("rx queue empty %d\n", newtail);
     return -1;
   }
   else
   {
     //good to go
+    rxtail=newtail;
     cprintf("rx status OK tail:%d\n", rxtail);
     struct rx_desc *curdesc=&rx_ring_buffer[rxtail]; //grab a ptr to the desc
     int eop=curdesc->status & E1000E_RXDESC_STATUS_EOP;
     int length=curdesc->length;
-//    cprintf("%s\n", &rx_desc_buffers[rxtail]);
+    if (length>len)
+      length=len; //truncate
     memcpy(buf, rx_desc_buffers[rxtail], length); //copy data into it
     //update fields
     curdesc->length=0;
@@ -225,24 +221,9 @@ e1000e_recv(char* buf, int len)
     curdesc->errors=0;
     curdesc->special=0;
 
-    rxtail=(rxtail+1)%RX_ARRAY_SIZE; //increment rxtail
     //now update tail on the nic
     bar_write(E1000E_RDT, &rxtail, 4);
-    if (!eop)
-    {
-      cprintf("going to recurse. len:%d\n", length);
-      int retval=e1000e_recv(buf+length, len-length);
-      if (retval<0)
-      {
-        cprintf("ret %d\n", retval);
-        return retval;
-      }
-      return length+retval;
-    }
-    else
-    {
-      return length;
-    }
+    return length;
   }
   panic("e1000e receive unexpected state");
 }

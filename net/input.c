@@ -17,19 +17,21 @@ input(envid_t ns_envid)
 	// reading from it for a while, so don't immediately receive
 	// another packet in to the same physical page.
 	cprintf("input started\n");
-  //sys_page_alloc(0, PACKET_PAGE_RECV, PTE_P | PTE_W | PTE_U);
+  sys_page_alloc(0, PACKET_PAGE_RECV, PTE_P | PTE_W | PTE_U);
   while (1)
   {
-    //nsipcbuf.pkt.jp_len=sys_nic_receive(&nsipcbuf.pkt.jp_data[0], PGSIZE);
-    nsipcbuf.pkt.jp_len=sys_nic_receive(buffer, PGSIZE);
+    nsipcbuf.pkt.jp_len=sys_nic_receive(&nsipcbuf.pkt.jp_data[0], 2048);
+    //nsipcbuf.pkt.jp_len=sys_nic_receive(buffer, PGSIZE);
     if (nsipcbuf.pkt.jp_len<0)
     {
       sys_yield();
       continue;
     }
-    cprintf("recv got %s\n", buffer);
-    //memcpy(PACKET_PAGE_RECV, &nsipcbuf, PGSIZE);
-    //ipc_send(ns_envid, 0x0, PACKET_PAGE_RECV, PTE_P|PTE_W|PTE_U);
+    //cprintf("recv got %s\n", buffer);
+    memcpy(PACKET_PAGE_RECV, &nsipcbuf, PGSIZE);
+    ipc_send(ns_envid, NSREQ_INPUT, PACKET_PAGE_RECV, PTE_P|PTE_W|PTE_U);
+    sys_yield();
+    sys_yield();
     sys_yield();
   }
 }
