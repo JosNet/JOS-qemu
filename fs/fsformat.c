@@ -17,6 +17,7 @@
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <dirent.h>
 #undef off_t
 #undef bool
 
@@ -180,17 +181,15 @@ finishdir(struct Dir *d)
 }
 
 int
-writefile(struct Dir *dir, const char *name, int indir)
+writefile(struct Dir *dir, int fd, const char* name)
 {
-	int r, fd;
+	int r;
 	struct File *f;
 	struct stat st;
 	const char *last;
 	char *start;
 
   int ftype=FTYPE_REG;
-	if ((fd = open(name, O_RDONLY)) < 0)
-		panic("open %s: %s", name, strerror(errno));
 	if ((r = fstat(fd, &st)) < 0)
   {
     //its a directory
@@ -200,15 +199,11 @@ writefile(struct Dir *dir, const char *name, int indir)
   {
 		printf("%s is not a regular file", name);
     ftype=FTYPE_DIR;
-    //return -1;
   }
 	if (st.st_size >= MAXFILESIZE)
 		panic("%s too large", name);
 
-	//if (indir==0)
-    last = strrchr(name, '/');
-  //else
-	  //last = strchr(name, '/');
+  last = strrchr(name, '/');
 	if (last)
 		last++;
 	else
@@ -221,13 +216,8 @@ writefile(struct Dir *dir, const char *name, int indir)
 	finishfile(f, blockof(start), st.st_size);
   if (ftype==FTYPE_DIR)
   {
-    ndirfd=fd;
-    F=f;
-    blockofstart=blockof(start);
-    stst_size=st.st_size;
     return -1;
   }
-	close(fd);
   return 0;
 }
 
@@ -236,6 +226,53 @@ usage(void)
 {
 	fprintf(stderr, "Usage: fsformat fs.img NBLOCKS files...\n");
 	exit(2);
+}
+
+
+int
+recursive_dir(struct File *jos_dir_fd, const char* path)
+{
+  DIR *d;
+  printf("curpath: %s\n", path);
+  d=opendir(path);
+  if (!d)
+  {
+    return -1;
+  }
+  //start jos directory
+  struct Dir cur_jos_dir;
+  startdir(jos_dir_fd, &cur_jos_dir);
+  while (1)
+  {
+    struct dirent *entry;
+    char d_name[250];
+    entry=readdir(d);
+    if (!entry)
+    {
+      //we're done
+      break;
+    }
+    if (strncmp(entry->d_name, "..", 2)==0 || strncmp(entry->d_name, ".", 1)==0)
+    {
+      continue;
+    }
+    strcpy(d_name, path);
+    strcat(d_name, "/");
+    strcat(d_name,entry->d_name);
+    int fd;
+    fd=open(d_name, O_RDONLY);
+    //write the file
+    if (writefile(&cur_jos_dir, fd, d_name)<0)
+    {
+      //we got a directory
+      printf("dir: %s\n", d_name);
+      recursive_dir(&cur_jos_dir.ents[cur_jos_dir.n-1], d_name);
+    }
+    printf("file: %s\n", d_name);
+    close(fd);
+  }
+  finishdir(&cur_jos_dir);
+  return 1;
 }
 
 int
@@ -256,7 +293,9 @@ main(int argc, char **argv)
 
 	opendisk(argv[1]);
 
-	startdir(&super->s_root, &root);
+  recursive_dir(&super->s_root, argv[3]);
+	/*
+  startdir(&super->s_root, &root);
   struct Dir *curdir=&root;
   int indir=0;
   struct File *ndir;
@@ -281,7 +320,7 @@ main(int argc, char **argv)
     close(ndirfd);
     finishdir(&root);
   }
-
+*/
 	finishdisk();
 	return 0;
 }
