@@ -33,7 +33,9 @@ typedef int bool;
 
 #define ROUNDUP(n, v) ((n) - 1 + (v) - ((n) - 1) % (v))
 #define MAX_DIR_ENTS 128
-
+int ndirfd=-1;
+struct File *F;
+int blockofstart, stst_size;
 struct Dir
 {
 	struct File *f;
@@ -186,6 +188,7 @@ writefile(struct Dir *dir, const char *name, int indir)
 	const char *last;
 	char *start;
 
+  int ftype=FTYPE_REG;
 	if ((fd = open(name, O_RDONLY)) < 0)
 		panic("open %s: %s", name, strerror(errno));
 	if ((r = fstat(fd, &st)) < 0)
@@ -196,12 +199,13 @@ writefile(struct Dir *dir, const char *name, int indir)
 	if (!S_ISREG(st.st_mode))
   {
 		printf("%s is not a regular file", name);
-    return -1;
+    ftype=FTYPE_DIR;
+    //return -1;
   }
 	if (st.st_size >= MAXFILESIZE)
 		panic("%s too large", name);
 
-//	if (indir==0)
+	//if (indir==0)
     last = strrchr(name, '/');
   //else
 	  //last = strchr(name, '/');
@@ -210,11 +214,19 @@ writefile(struct Dir *dir, const char *name, int indir)
 	else
 		last = name;
 
-	f = diradd(dir, FTYPE_REG, last);
+	f = diradd(dir, ftype, last);
   printf("%s\n", last);
 	start = alloc(st.st_size);
 	readn(fd, start, st.st_size);
 	finishfile(f, blockof(start), st.st_size);
+  if (ftype==FTYPE_DIR)
+  {
+    ndirfd=fd;
+    F=f;
+    blockofstart=blockof(start);
+    stst_size=st.st_size;
+    return -1;
+  }
 	close(fd);
   return 0;
 }
@@ -247,6 +259,7 @@ main(int argc, char **argv)
 	startdir(&super->s_root, &root);
   struct Dir *curdir=&root;
   int indir=0;
+  struct File *ndir;
 	for (i = 3; i < argc; i++)
   {
 		if (writefile(curdir, argv[i], indir)==-1)
@@ -254,12 +267,20 @@ main(int argc, char **argv)
       printf("putting the directory in\n");
       curdir=&ws;
       indir=1;
-      startdir(&root.ents[root.n], &ws);
+      ndir=&root.ents[root.n-1];
+//      nroot->f_type=1;
+ //     memcpy(nroot->f_name, argv[i], strlen(argv[i]));
+      startdir(ndir, &ws);
     }
   }
 	finishdir(curdir);
   if (curdir!=&root)
+  {
+	  printf("finish directory\n");
+//    finishfile(F, blockofstart, stst_size);
+    close(ndirfd);
     finishdir(&root);
+  }
 
 	finishdisk();
 	return 0;
