@@ -25,7 +25,7 @@ output(envid_t ns_envid)
       union Nsipc *packet=(union Nsipc*)PACKET_PAGE;
       //send the packet
       int transmit=sys_nic_transmit((void*)packet->pkt.jp_data, packet->pkt.jp_len);
-      cprintf("sent %s\n", packet->pkt.jp_data);
+      //cprintf("sent %s\n", packet->pkt.jp_data);
       //++count;
   }
 }

@@ -34,15 +34,20 @@ USERAPPS :=		$(USERAPPS) \
 			$(OBJDIR)/user/hello \
 			$(OBJDIR)/user/rm \
 			$(OBJDIR)/user/mkdir \
+			$(OBJDIR)/user/webserver \
+			$(OBJDIR)/user/httpd \
 
 FSIMGTXTFILES :=	$(FSIMGTXTFILES) \
 			fs/lorem \
 			fs/script \
 			fs/testshell.key \
-			fs/testshell.sh
+			fs/testshell.sh  \
+
+FSDIRFILES := fs/ws    \
+			fs/ws/index.html \
 
 
-FSIMGFILES := $(FSIMGTXTFILES) $(USERAPPS)
+FSIMGFILES := $(FSIMGTXTFILES) $(USERAPPS) $(FSDIRFILES)
 
 $(OBJDIR)/fs/%.o: fs/%.c fs/fs.h inc/lib.h $(OBJDIR)/.vars.USER_CFLAGS
 	@echo + cc[USER] $<

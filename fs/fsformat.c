@@ -177,8 +177,8 @@ finishdir(struct Dir *d)
 	d->ents = NULL;
 }
 
-void
-writefile(struct Dir *dir, const char *name)
+int
+writefile(struct Dir *dir, const char *name, int indir)
 {
 	int r, fd;
 	struct File *f;
@@ -189,23 +189,34 @@ writefile(struct Dir *dir, const char *name)
 	if ((fd = open(name, O_RDONLY)) < 0)
 		panic("open %s: %s", name, strerror(errno));
 	if ((r = fstat(fd, &st)) < 0)
-		panic("stat %s: %s", name, strerror(errno));
+  {
+    //its a directory
+		printf("stat %s: %s", name, strerror(errno));
+  }
 	if (!S_ISREG(st.st_mode))
-		panic("%s is not a regular file", name);
+  {
+		printf("%s is not a regular file", name);
+    return -1;
+  }
 	if (st.st_size >= MAXFILESIZE)
 		panic("%s too large", name);
 
-	last = strrchr(name, '/');
+//	if (indir==0)
+    last = strrchr(name, '/');
+  //else
+	  //last = strchr(name, '/');
 	if (last)
 		last++;
 	else
 		last = name;
 
 	f = diradd(dir, FTYPE_REG, last);
+  printf("%s\n", last);
 	start = alloc(st.st_size);
 	readn(fd, start, st.st_size);
 	finishfile(f, blockof(start), st.st_size);
 	close(fd);
+  return 0;
 }
 
 void
@@ -220,7 +231,7 @@ main(int argc, char **argv)
 {
 	int i;
 	char *s;
-	struct Dir root;
+	struct Dir root, ws;
 
 	assert(BLKSIZE % sizeof(struct File) == 0);
 
@@ -234,9 +245,21 @@ main(int argc, char **argv)
 	opendisk(argv[1]);
 
 	startdir(&super->s_root, &root);
+  struct Dir *curdir=&root;
+  int indir=0;
 	for (i = 3; i < argc; i++)
-		writefile(&root, argv[i]);
-	finishdir(&root);
+  {
+		if (writefile(curdir, argv[i], indir)==-1)
+    {
+      printf("putting the directory in\n");
+      curdir=&ws;
+      indir=1;
+      startdir(&root.ents[root.n], &ws);
+    }
+  }
+	finishdir(curdir);
+  if (curdir!=&root)
+    finishdir(&root);
 
 	finishdisk();
 	return 0;

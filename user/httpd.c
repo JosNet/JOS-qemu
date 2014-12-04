@@ -11,6 +11,8 @@
 #define BUFFSIZE 512
 #define MAXPENDING 5	// Max connection requests
 
+#define STRINGSIZE 2048
+
 struct http_request {
 	int sock;
 	char *url;
@@ -37,6 +39,15 @@ struct error_messages errors[] = {
 	{400, "Bad Request"},
 	{404, "Not Found"},
 };
+
+void wait_ms(int time)
+{
+  int curtime=sys_time_msec();
+  while ((sys_time_msec()-curtime)<time)
+  {
+    sys_yield();
+  }
+}
 
 static void
 die(char *m)
@@ -74,10 +85,16 @@ send_header(struct http_request *req, int code)
 }
 
 static int
-send_data(struct http_request *req, int fd)
+send_data(struct http_request *req, char* buf, int len)
 {
 	// LAB 6: Your code here.
-	panic("send_data not implemented");
+  int bytes=0;
+  while (bytes<len)
+  {
+    bytes+=write(req->sock, &buf[bytes], len-bytes);
+    wait_ms(10);
+  }
+  return bytes;
 }
 
 static int
@@ -223,8 +240,18 @@ send_file(struct http_request *req)
 	// set file_size to the size of the file
 
 	// LAB 6: Your code here.
-	panic("send_file not implemented");
-
+  struct Stat sbuf;
+  stat(req->url, &sbuf);
+  fd=open(req->url, O_RDONLY);
+  if(fd<0 || sbuf.st_isdir)
+  {
+    r=send_error(req, 404);
+    return r;
+  }
+  char *string=malloc(STRINGSIZE);
+  memset(string, '\0', STRINGSIZE);
+  while (read(fd, &string[strlen(string)], STRINGSIZE-strlen(string))>0){};
+  file_size = strlen(string);
 	if ((r = send_header(req, 200)) < 0)
 		goto end;
 
@@ -237,9 +264,9 @@ send_file(struct http_request *req)
 	if ((r = send_header_fin(req)) < 0)
 		goto end;
 
-	r = send_data(req, fd);
-
+	r = send_data(req, string, file_size);
 end:
+  free(string);
 	close(fd);
 	return r;
 }

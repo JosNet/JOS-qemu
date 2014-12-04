@@ -63,6 +63,19 @@
 #define E1000E_MTA_START 0x5200       //first reg in MTA array
 #define E1000E_MTA_END 0x53FC         //last reg in MTA array
 
+
+//eeprom vals
+#define E1000E_EERD 0x14                //eeprom read register
+#define E1000E_EEPROM_START 0x1         //bit to start eeprom read
+#define E1000E_EEPROM_ADDR_SHIFT 8     //amt to shift read addr by
+#define E1000E_EEPROM_DONE (0x1 << 4)   //when done bit 4 will be set
+#define E1000E_EEPROM_RDMASK 0xFFFF0000 //top half of reg is read data
+#define E1000E_EEPROM_ETH_ADDR_0 0x0   //high chunk of MAC
+#define E1000E_EEPROM_ETH_ADDR_1 0x1   //middle chunk of MAC
+#define E1000E_EEPROM_ETH_ADDR_2 0x2   //low chunk of MAC
+
+
+
 struct tx_desc
 {
   uint64_t addr;    //host buffer address

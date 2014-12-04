@@ -29,11 +29,31 @@ bar_read(unsigned addr, void* data, int size)
 }
 
 int
+eeprom_read(unsigned addr)
+{
+  int control=E1000E_EEPROM_START|(addr<<E1000E_EEPROM_ADDR_SHIFT);
+  bar_write(E1000E_EERD, &control, 4);
+  int ready=0;
+  while (!(ready&E1000E_EEPROM_DONE))
+  {
+    bar_read(E1000E_EERD, &ready, 4);
+  }
+  control=0;
+  bar_write(E1000E_EERD, &control, 4);
+  return (ready&E1000E_EEPROM_RDMASK)>>16;
+}
+
+int
 e1000e_init(struct pci_func *f)
 {
+  int mac_addr[3]={0,0,0};
   e1000e_bar0=mmio_map_region(f->reg_base[0], f->reg_size[0]);
   cprintf("e1000e nic bar 0 lives at 0x%8x\n", e1000e_bar0);
   cprintf("e1000e device status: 0x%x\n", e1000e_bar0[2]);
+  mac_addr[0]=eeprom_read(E1000E_EEPROM_ETH_ADDR_0);
+  mac_addr[1]=eeprom_read(E1000E_EEPROM_ETH_ADDR_1);
+  mac_addr[2]=eeprom_read(E1000E_EEPROM_ETH_ADDR_2);
+  cprintf("read MAC as :\t0x%8x\n\t0x%8x\n\t0x%8x\n", mac_addr[0], mac_addr[1], mac_addr[2]);
   return 0;
 }
 
@@ -207,7 +227,7 @@ e1000e_recv(char* buf, int len)
   {
     //good to go
     rxtail=newtail;
-    cprintf("rx status OK tail:%d\n", rxtail);
+    //cprintf("rx status OK tail:%d\n", rxtail);
     struct rx_desc *curdesc=&rx_ring_buffer[rxtail]; //grab a ptr to the desc
     int eop=curdesc->status & E1000E_RXDESC_STATUS_EOP;
     int length=curdesc->length;
