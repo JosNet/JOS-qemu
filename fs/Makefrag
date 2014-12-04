@@ -36,6 +36,7 @@ USERAPPS :=		$(USERAPPS) \
 			$(OBJDIR)/user/mkdir \
 			$(OBJDIR)/user/webserver \
 			$(OBJDIR)/user/httpd \
+			$(OBJDIR)/user/telnet_console \
 
 FSIMGTXTFILES :=	$(FSIMGTXTFILES) \
 			fs/lorem \

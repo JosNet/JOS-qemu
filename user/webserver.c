@@ -2,7 +2,7 @@
 #include <lwip/sockets.h>
 #include <lwip/inet.h>
 
-#define SERVER_PORT 80
+#define SERVER_PORT 514
 #define LISTENQ 8
 #define bool int
 #define false 0
@@ -87,7 +87,7 @@ int service(int client)
           printf("closing connection\n");
           keepalive=false;
         }
-        //printf("%s\n", buf);
+        printf("%s\n", buf);
         char uri[250];
         memset(uri, 0, 250);
         //use sscanf with a max string length to avoid overflow
