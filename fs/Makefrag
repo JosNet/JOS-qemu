@@ -43,8 +43,8 @@ FSIMGTXTFILES :=	$(FSIMGTXTFILES) \
 			fs/testshell.key \
 			fs/testshell.sh  \
 
-FSDIRFILES := fs/ws    \
-			fs/ws/index.html \
+#FSDIRFILES := fs/ws    \
+#			fs/ws/index.html \
 
 
 FSIMGFILES := $(FSIMGTXTFILES) $(USERAPPS) $(FSDIRFILES)
