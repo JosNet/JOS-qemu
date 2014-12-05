@@ -38,7 +38,7 @@ vcpus   = 1;
 memory  = 128;
 maxmem  = 128;
 kernel  = "$grub"
-disk = ['file:$iso,hda,w','file:$fs,hdb,w'];
+disk = ['file:$iso,cdrom,r','file:$fs,hda,w'];
 vif = [ 'model=e1000' ];
 
 EOF
