@@ -1,0 +1,47 @@
+#!/usr/bin/env perl
+
+if(not (-s "obj/bootable.iso")) {
+    die("Need an iso!");
+}
+
+if(not (-s "obj/fs/fs.img")) {
+    die("Need a filesystem!");
+}
+
+my $pwd = `pwd`; chomp($pwd);
+my $iso = "$pwd/obj/bootable.iso";
+my $fs = "$pwd/obj/fs/fs.img";
+my $conf = "$pwd/obj/xenjos.cfg";
+my $exitcode = 0;
+
+my $pvgrub = "";
+for my $file (split "\n", `find /usr/lib`) {
+    chomp($file);
+    if(($file =~ /pv-grub/) and ($file =~ /gz/)) {
+        $pvgrub = $file;
+    }
+}
+
+if(length($pvgrub) == 0) {
+    print("Couldn't find pvgrub in /usr/lib!\n");
+    $exitcode = 1;
+}
+
+open(my $fh, '>', $conf)
+    or die "Could not new config file '$conf'!";
+print $fh (<<EOF
+
+name    = 'josnet';
+vcpus   = 1;
+memory  = 128;
+maxmem  = 128;
+kernel  = "$pvgrub"
+disk = ['$iso,hda,w','$fs,hdb,w'];
+vif = [ 'model=e1000' ];
+
+EOF
+);
+
+close $fh;
+
+exit $exitcode;

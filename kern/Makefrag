@@ -154,10 +154,7 @@ all: $(OBJDIR)/kern/kernel.img
 
 grub: $(OBJDIR)/kern/kernel
 	perl tools/mkiso $(OBJDIR) $(ISODIR)
-
-bootgrub: grub
-	$(QEMU) $(QEMUOPTS) -cdrom obj/bootable.iso
-
+#
 # This is a load of shit:
 # $(OBJDIR)/jos-grub: $(OBJDIR)/kern/kernel
 # @echo + oc $@

@@ -364,5 +364,11 @@ $(OBJDIR)/.deps: $(foreach dir, $(OBJDIRS), $(wildcard $(OBJDIR)/$(dir)/*.d))
 always:
 	@:
 
+bootgrub: grub $(OBJDIR)/fs/fs.img
+	$(QEMU) $(QEMUOPTS) -cdrom $(OBJDIR)/bootable.iso -hdb $(OBJDIR)/fs/fs.img
+
+xencfg: grub $(OBJDIR)/fs/fs.img
+	perl tools/mkxen
+
 .PHONY: all always \
 	handin git-handin tarball tarball-pref clean realclean distclean grade handin-prep handin-check
