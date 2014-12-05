@@ -365,7 +365,7 @@ always:
 	@:
 
 bootgrub: grub $(OBJDIR)/fs/fs.img
-	$(QEMU) $(QEMUOPTS) -cdrom $(OBJDIR)/bootable.iso -hdb $(OBJDIR)/fs/fs.img
+	$(QEMU) -cdrom $(OBJDIR)/bootable.iso -hda $(OBJDIR)/fs/fs.img
 
 xencfg: grub $(OBJDIR)/fs/fs.img
 	perl tools/mkxen
