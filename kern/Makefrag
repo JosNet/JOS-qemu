@@ -152,8 +152,13 @@ $(OBJDIR)/kern/kernel.img: $(OBJDIR)/kern/kernel $(OBJDIR)/boot/boot
 
 all: $(OBJDIR)/kern/kernel.img
 
-grub: $(OBJDIR)/jos-grub
+grub: $(OBJDIR)/kern/kernel
+	perl tools/mkiso $(OBJDIR) $(ISODIR)
 
-$(OBJDIR)/jos-grub: $(OBJDIR)/kern/kernel
-	@echo + oc $@
-	$(V)$(OBJCOPY) --adjust-vma=0x10000000 $^ $@
+bootgrub: grub
+	$(QEMU) $(QEMUOPTS) -cdrom obj/bootable.iso
+
+# This is a load of shit:
+# $(OBJDIR)/jos-grub: $(OBJDIR)/kern/kernel
+# @echo + oc $@
+# $(V)$(OBJCOPY) --adjust-vma=0x10000000 $^ $@
