@@ -14,16 +14,17 @@ my $fs = "$pwd/obj/fs/fs.img";
 my $conf = "$pwd/obj/xenjos.cfg";
 my $exitcode = 0;
 
-my $pvgrub = "";
+my $grub = "";
+
 for my $file (split "\n", `find /usr/lib`) {
     chomp($file);
-    if(($file =~ /pv-grub/) and ($file =~ /gz/)) {
-        $pvgrub = $file;
+    if(($file =~ /pv-grub/) or ($file =~ /pygrub/)) {
+        $grub = $file;
     }
 }
 
-if(length($pvgrub) == 0) {
-    print("Couldn't find pvgrub in /usr/lib!\n");
+if(length($grub) == 0) {
+    print("Couldn't find pvgrub or pygrub in /usr/lib!\n");
     $exitcode = 1;
 }
 
@@ -35,7 +36,7 @@ name    = 'josnet';
 vcpus   = 1;
 memory  = 128;
 maxmem  = 128;
-kernel  = "$pvgrub"
+kernel  = "$grub"
 disk = ['$iso,hda,w','$fs,hdb,w'];
 vif = [ 'model=e1000' ];
 
