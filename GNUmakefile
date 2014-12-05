@@ -154,16 +154,14 @@ CPUS ?= 1
 PORT7	:= $(shell expr $(GDBPORT) + 1)
 PORT80	:= $(shell expr $(GDBPORT) + 2)
 
-QEMUOPTS = -hda $(OBJDIR)/kern/kernel.img -serial mon:stdio -gdb tcp::$(GDBPORT)
-QEMUOPTS += $(shell if $(QEMU) -nographic -help | grep -q '^-D '; then echo '-D qemu.log'; fi)
-IMAGES = $(OBJDIR)/kern/kernel.img
-QEMUOPTS += -smp $(CPUS)
-QEMUOPTS += -hdb $(OBJDIR)/fs/fs.img
-QEMUOPTS += -m 1024
-IMAGES += $(OBJDIR)/fs/fs.img
-QEMUOPTS += -net user -net nic,macaddr=12:34:56:78:90:AB,model=e1000 -redir tcp:$(PORT7)::7 -soundhw sb16 \
+IMAGES := $(OBJDIR)/kern/kernel.img $(OBJDIR)/fs/fs.img
+QEMU_BASE := -serial mon:stdio -gdb tcp::$(GDBPORT) -smp $(CPUS) -m 1024 $(shell if $(QEMU) -nographic -help | grep -q '^-D '; then echo '-D qemu.log'; fi)
+
+QEMU_HW := -net user -net nic,macaddr=12:34:56:78:90:AB,model=e1000 -redir tcp:$(PORT7)::7 -soundhw sb16 \
 	-redir tcp:$(PORT80)::80 -redir tcp:26514::514 -redir udp:$(PORT7)::7 -net dump,file=qemu.pcap
-QEMUOPTS += $(QEMUEXTRA)
+
+QEMU_DISK := -hda $(OBJDIR)/kern/kernel.img -hdb $(OBJDIR)/fs/fs.img
+QEMUOPTS := $(QEMU_BASE) $(QEMU_HW) $(QEMU_DISK) $(QEMUEXTRA)
 
 .gdbinit: .gdbinit.tmpl
 	sed "s/localhost:1234/localhost:$(GDBPORT)/" < $^ > $@
@@ -365,7 +363,8 @@ always:
 	@:
 
 bootgrub: grub $(OBJDIR)/fs/fs.img
-	$(QEMU) -cdrom $(OBJDIR)/bootable.iso -hda $(OBJDIR)/fs/fs.img
+	$(QEMU) $(QEMU_BASE) $(QEMU_HW) -cdrom $(OBJDIR)/bootable.iso -hda $(OBJDIR) /fs/fs.img
+
 
 xencfg: grub $(OBJDIR)/fs/fs.img
 	perl tools/mkxen

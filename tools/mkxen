@@ -18,8 +18,8 @@ my $grub = "";
 
 for my $file (split "\n", `find /usr/lib`) {
     chomp($file);
-    if(($file =~ /pv-grub/ and $file =~ /\.gz/)
-    or ($file =~ /pygrub/ and $file != /\./)) {
+    if((($file =~ /pv-grub/) and ($file =~ /\.gz/))
+    or (($file =~ /pygrub/) and ($file =~ /\/[^\/\.]+$/))) {
         $grub = $file;
     }
 }
@@ -38,7 +38,7 @@ vcpus   = 1;
 memory  = 128;
 maxmem  = 128;
 kernel  = "$grub"
-disk = ['$iso,hda,w','$fs,hdb,w'];
+disk = ['file:$iso,hda,w','file:$fs,hdb,w'];
 vif = [ 'model=e1000' ];
 
 EOF

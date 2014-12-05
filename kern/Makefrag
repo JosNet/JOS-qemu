@@ -154,6 +154,7 @@ all: $(OBJDIR)/kern/kernel.img
 
 grub: $(OBJDIR)/kern/kernel
 	perl tools/mkiso $(OBJDIR) $(ISODIR)
+
 #
 # This is a load of shit:
 # $(OBJDIR)/jos-grub: $(OBJDIR)/kern/kernel
