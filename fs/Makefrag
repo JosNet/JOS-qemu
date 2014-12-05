@@ -74,7 +74,7 @@ $(OBJDIR)/fs/fsformat: fs/fsformat.c
 $(OBJDIR)/fs/clean-fs.img: $(OBJDIR)/fs/fsformat $(FSIMGFILES)
 	@echo + mk $(OBJDIR)/fs/clean-fs.img
 	$(V)mkdir -p $(@D)
-	find $(OBJDIR)/fs | xargs cp root/
+    perl tools/mkroot
 	cp $(OBJDIR)/user/* root/
 	$(V)$(OBJDIR)/fs/fsformat $(OBJDIR)/fs/clean-fs.img 1024 $(FSROOT_DIR)
 
