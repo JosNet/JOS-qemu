@@ -16,13 +16,21 @@ my $exitcode = 0;
 
 my $grub = "";
 
+# Prefer pv-grub to pygrub
+
 for my $file (split "\n", `find /usr/lib`) {
     chomp($file);
     if(($file =~ /pv-grub/) and ($file =~ /\.gz/)) {
         $grub = qq(kernel = '$file');
     }
-    if (($file =~ /pygrub/) and ($file =~ /\/[^\/\.]+$/)) {
-        $grub = qq(bootloader = '$file');
+}
+
+if(length($grub) == 0) {
+    for my $file (split "\n", `find /usr/lib`) {
+        chomp($file);
+        if (($file =~ /pygrub/) and ($file =~ /\/[^\/\.]+$/)) {
+            $grub = qq(bootloader = '$file');
+        }
     }
 }
 
