@@ -1,0 +1,4 @@
+default 0
+
+title JOS
+kernel /boot/jos-grub
