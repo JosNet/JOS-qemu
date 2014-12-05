@@ -49,7 +49,6 @@ GCCPREFIX := $(shell if i386-jos-elf-objdump -i 2>&1 | grep '^elf32-i386$$' >/de
 endif
 
 # try to infer the correct QEMU
-QEMU := /home/yanni/qemu/bin/qemu-system-x86_64
 ifndef QEMU
 QEMU := $(shell if which qemu > /dev/null; \
 	then echo qemu; exit; \
@@ -58,6 +57,7 @@ QEMU := $(shell if which qemu > /dev/null; \
 	else \
 	qemu=/Applications/Q.app/Contents/MacOS/i386-softmmu.app/Contents/MacOS/i386-softmmu; \
 	if test -x $$qemu; then echo $$qemu; exit; fi; fi; \
+
 	echo "***" 1>&2; \
 	echo "*** Error: Couldn't find a working QEMU executable." 1>&2; \
 	echo "*** Is the directory containing the qemu binary in your PATH" 1>&2; \

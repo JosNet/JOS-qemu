@@ -51,11 +51,33 @@ ide_probe_disk1(void)
 	return (x < 1000);
 }
 
+bool
+ide_probe_diskn(int n)
+{
+	int r, x;
+
+	// wait for Device 0 to be ready
+	ide_wait_ready(0);
+
+	// switch to Device n
+	outb(0x1F6, 0xE0 | (n<<4));
+
+	// check for Device n to be ready for a while
+	for (x = 0;
+	     x < 1000 && ((r = inb(0x1F7)) & (IDE_BSY|IDE_DF|IDE_ERR)) != 0;
+	     x++)
+		/* do nothing */;
+
+	// switch back to Device 0
+	outb(0x1F6, 0xE0 | (0<<4));
+
+	cprintf("Device %d presence: %d\n", n, (x < 1000));
+	return (x < 1000);
+}
+
 void
 ide_set_disk(int d)
 {
-	if (d != 0 && d != 1)
-		panic("bad disk number");
 	diskno = d;
 }
 

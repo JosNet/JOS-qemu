@@ -16,6 +16,7 @@ uint32_t *bitmap;		// bitmap blocks mapped in memory
 
 /* ide.c */
 bool	ide_probe_disk1(void);
+bool	ide_probe_diskn(int);
 void	ide_set_disk(int diskno);
 void	ide_set_partition(uint32_t first_sect, uint32_t nsect);
 int	ide_read(uint32_t secno, void *dst, size_t nsecs);

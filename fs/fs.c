@@ -20,6 +20,12 @@ check_super(void)
 	cprintf("superblock is good\n");
 }
 
+bool
+has_super_magic(void)
+{
+	return (super->s_magic == FS_MAGIC);
+}
+
 // --------------------------------------------------------------
 // Free block bitmap
 // --------------------------------------------------------------
@@ -101,7 +107,7 @@ check_bitmap(void)
 // File system structures
 // --------------------------------------------------------------
 
-
+#define FS_MAX_DISK 5
 
 // Initialize the file system
 void
@@ -109,11 +115,13 @@ fs_init(void)
 {
 	static_assert(sizeof(struct File) == 256);
 
-       // Find a JOS disk.  Use the second IDE disk (number 1) if availabl
-       if (ide_probe_disk1())
-               ide_set_disk(1);
-       else
-               ide_set_disk(0);
+    // Find a JOS disk.  Use the second IDE disk (number 1) if availabl
+    int tmp_diskno = FS_MAX_DISK;
+    for(; tmp_diskno >= 0; tmp_diskno--)
+        if (ide_probe_diskn(tmp_diskno))
+            break;
+    
+    ide_set_disk(tmp_diskno);
 	bc_init();
 
 	// Set "super" to point to the super block.

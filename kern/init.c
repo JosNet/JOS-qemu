@@ -40,7 +40,6 @@ i386_init(void)
 	// Lab 2 memory management initialization functions
 	mem_init();
 
-
 	// Lab 3 user environment initialization functions
 	env_init();
 	trap_init();
@@ -61,18 +60,12 @@ i386_init(void)
 
 	// Starting non-boot CPUs
 	lock_kernel();
-  boot_aps();
+    boot_aps();
 
-  //init e1000e
-  e1000e_tx_init();
-  e1000e_rx_init();
+    //init e1000e
+    e1000e_tx_init();
+    e1000e_rx_init();
 
-
-  //int i;
-  //for (i=0; i<10; ++i)
-  //{
-   // e1000e_transmit("JOS", 3);
- // }
 
 	// Start fs.
 	ENV_CREATE(fs_fs, ENV_TYPE_FS);
@@ -88,17 +81,17 @@ i386_init(void)
 #else
 	// Touch all you want.
 	//ENV_CREATE(user_primes, ENV_TYPE_USER);
-  ENV_CREATE(user_httpd, ENV_TYPE_USER);
-  //ENV_CREATE(user_webserver, ENV_TYPE_USER);
-  ENV_CREATE(user_icode,ENV_TYPE_USER);
-  //ENV_CREATE(user_telnet_console, ENV_TYPE_USER);
+    ENV_CREATE(user_httpd, ENV_TYPE_USER);
+    //ENV_CREATE(user_webserver, ENV_TYPE_USER);
+    ENV_CREATE(user_icode,ENV_TYPE_USER);
+    //ENV_CREATE(user_telnet_console, ENV_TYPE_USER);
 #endif // TEST*
 
 	// Should not be necessary - drains keyboard because interrupt has given up.
 	kbd_intr();
 
 	// Schedule and run the first user environment!
-  sched_yield();
+    sched_yield();
 }
 
 // While boot_aps is booting a given CPU, it communicates the per-core
