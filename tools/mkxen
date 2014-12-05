@@ -18,9 +18,11 @@ my $grub = "";
 
 for my $file (split "\n", `find /usr/lib`) {
     chomp($file);
-    if((($file =~ /pv-grub/) and ($file =~ /\.gz/))
-    or (($file =~ /pygrub/) and ($file =~ /\/[^\/\.]+$/))) {
-        $grub = $file;
+    if(($file =~ /pv-grub/) and ($file =~ /\.gz/)) {
+        $grub = qq(kernel = '$file');
+    }
+    if (($file =~ /pygrub/) and ($file =~ /\/[^\/\.]+$/)) {
+        $grub = qq(bootloader = '$file');
     }
 }
 
@@ -37,7 +39,7 @@ name    = 'josnet';
 vcpus   = 1;
 memory  = 128;
 maxmem  = 128;
-kernel  = "$grub"
+$grub
 disk = ['file:$iso,cdrom,r','file:$fs,hda,w'];
 vif = [ 'model=e1000' ];
 
