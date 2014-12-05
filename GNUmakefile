@@ -121,7 +121,7 @@ all:
 .DELETE_ON_ERROR:
 
 # make it so that no intermediate .o files are ever deleted
-.PRECIOUS: %.o $(OBJDIR)/boot/%.o $(OBJDIR)/kern/%.o \
+#.PRECIOUS: %.o $(OBJDIR)/boot/%.o $(OBJDIR)/kern/%.o \
 	   $(OBJDIR)/lib/%.o $(OBJDIR)/fs/%.o $(OBJDIR)/net/%.o \
 	   $(OBJDIR)/user/%.o
 
@@ -135,7 +135,7 @@ USER_CFLAGS := $(CFLAGS) -DJOS_USER -gstabs
 # force a rebuild of the rule that depends on it.
 $(OBJDIR)/.vars.%: FORCE
 	$(V)echo "$($*)" | cmp -s $@ || echo "$($*)" > $@
-.PRECIOUS: $(OBJDIR)/.vars.%
+#.PRECIOUS: $(OBJDIR)/.vars.%
 .PHONY: FORCE
 
 

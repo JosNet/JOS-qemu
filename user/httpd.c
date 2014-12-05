@@ -78,6 +78,7 @@ send_header(struct http_request *req, int code)
 
 	int len = strlen(h->header);
 	if (write(req->sock, h->header, len) != len) {
+    printf("length %d", len);
 		die("Failed to send bytes to client");
 	}
 
@@ -88,12 +89,13 @@ static int
 send_data(struct http_request *req, char* buf, int len)
 {
 	// LAB 6: Your code here.
+  //printf("sending %s\n", buf);
   int bytes=0;
-  while (bytes<len)
-  {
+//  while (bytes<len)
+ // {
     bytes+=write(req->sock, &buf[bytes], len-bytes);
-    wait_ms(10);
-  }
+  //  wait_ms(10);
+ // }
   return bytes;
 }
 
@@ -172,7 +174,7 @@ http_request_parse(struct http_request *req, char *request)
 
 	// get the url
 	url = request;
-	while (*request && *request != ' ')
+	while (*request && *request != ' ') //skip to next whitespace
 		request++;
 	url_len = request - url;
 
@@ -228,6 +230,90 @@ send_error(struct http_request *req, int code)
 }
 
 static int
+send_shtml(struct http_request *req, char* string, int len)
+{
+	char buf[512];
+	int r;
+
+	//r = snprintf(buf, 512, "<html><body><p>%250s</p></body></html>\r\n",string);
+
+  write(req->sock, "<html><body><pre>", 17);
+  int bytes=0;
+  while (bytes<len)
+  {
+    bytes+=write(req->sock, &string[bytes], len-bytes);
+    wait_ms(10);
+  }
+  write(req->sock, "</pre></body></html>\r\n", 22);
+	//if (write(req->sock, buf, r) != r)
+	//	return -1;
+
+	return 0;
+}
+
+static int
+parse_shtml(char* file, char* cmd)
+{
+  if (strncmp(file, "#<exec ", 7)!=0)
+    return -1;
+  file+=7; //skip to cmd
+  char *startcmd=file;
+  while (*file && *file != '>')
+  {
+    ++file;
+  }
+  memcpy(cmd, startcmd, file-startcmd);
+  cmd[file-startcmd]='\0'; //NULL it
+  return file-startcmd; //return length
+}
+
+void
+runcmd(char* cmd, char* result, int result_len)
+{
+  //so make 2 pipes. an input and output
+  //dup them to 0 and 1
+  //write cmd into input
+  //read result from output
+  //strcat(cmd, "\r\n");
+  int rdfile=open("/tmprd", O_CREAT|O_WRONLY|O_TRUNC);
+  if (!rdfile)
+  {
+    printf("couldn't open temp file\n");
+  }
+  write(rdfile, cmd, strlen(cmd));
+  write(rdfile, "\n", 1);
+  close(rdfile);
+  int wrfile=open("/tmpwr", O_CREAT|O_WRONLY|O_TRUNC);
+  if (!wrfile)
+  {
+    printf("couldn't open temp file\n");
+  }
+  int pid=fork();
+  if (pid==0)
+  {
+    close(1);
+  dup(wrfile, 1);
+  int id=0;
+  id=spawnl("/sh", "sh", "/tmprd", (char*)0);
+  if (id<0)
+  {
+	  printf("spawn sh: %e\n", id);
+    exit();
+  }
+  memset(result,'\0',result_len);
+  wait(id);
+  close(wrfile);
+  exit();
+  }
+  wait(pid);
+  wrfile=open("/tmpwr", O_RDONLY);
+  int bytes_read=0;
+  bytes_read+=read(wrfile, result, result_len);
+  close(wrfile);
+  return;
+}
+
+static int
 send_file(struct http_request *req)
 {
 	int r;
@@ -241,6 +327,7 @@ send_file(struct http_request *req)
 
 	// LAB 6: Your code here.
   struct Stat sbuf;
+  int shtml=0;
   stat(req->url, &sbuf);
   fd=open(req->url, O_RDONLY);
   if(fd<0 || sbuf.st_isdir)
@@ -248,10 +335,26 @@ send_file(struct http_request *req)
     r=send_error(req, 404);
     return r;
   }
+  char *cmd=malloc(20);
   char *string=malloc(STRINGSIZE);
   memset(string, '\0', STRINGSIZE);
   while (read(fd, &string[strlen(string)], STRINGSIZE-strlen(string))>0){};
   file_size = strlen(string);
+  //now check if it's shtml
+  int cmdlen=parse_shtml(string, cmd);
+  if (cmdlen>0)
+  {
+    //printf("shtml parse match %s\n", cmd);
+    runcmd(cmd, string, STRINGSIZE);
+    //printf("result %s\n", string);
+    file_size=strlen(string);
+    shtml=1;
+  }
+  if (file_size==0)
+  {
+    send_error(req, 404);
+    goto end;
+  }
 	if ((r = send_header(req, 200)) < 0)
 		goto end;
 
@@ -264,9 +367,15 @@ send_file(struct http_request *req)
 	if ((r = send_header_fin(req)) < 0)
 		goto end;
 
+  if (shtml)
+  {
+    r=send_shtml(req, string, file_size);
+    goto end;
+  }
 	r = send_data(req, string, file_size);
 end:
   free(string);
+  free(cmd);
 	close(fd);
 	return r;
 }

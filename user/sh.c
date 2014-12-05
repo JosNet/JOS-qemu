@@ -318,6 +318,7 @@ umain(int argc, char **argv)
 	if (argc > 2)
 		usage();
 	if (argc == 2) {
+    printf("closing stdin\n");
 		close(0);
 		if ((r = open(argv[1], O_RDONLY)) < 0)
 			panic("open %s: %e", argv[1], r);
@@ -329,8 +330,8 @@ umain(int argc, char **argv)
 	while (1) {
 		char *buf;
 
-		//buf = readline(interactive ? "$ " : NULL);
-		buf = readline("$ ");
+		buf = readline(interactive ? "$ " : NULL);
+		//buf = readline("$ ");
 		if (buf == NULL) {
 			if (debug)
 				cprintf("EXITING\n");
@@ -364,6 +365,8 @@ umain(int argc, char **argv)
 			cprintf("LINE: %s\n", buf);
 		if (buf[0] == '#')
 			continue;
+    if (strncmp(buf, "byebye", 6)==0)
+      exit();
 		if (echocmds)
 			printf("# %s\n", buf);
 		if (debug)

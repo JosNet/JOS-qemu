@@ -81,6 +81,7 @@ umain(int argc, char **argv)
 	int i;
 	struct Argstate args;
 
+  printf("ls start\n");
 	argstart(&argc, argv, &args);
 	while ((i = argnext(&args)) >= 0)
 		switch (i) {

@@ -2,7 +2,7 @@
 #include <lwip/sockets.h>
 #include <lwip/inet.h>
 
-#define SERVER_PORT 514
+#define SERVER_PORT 80
 #define LISTENQ 8
 #define bool int
 #define false 0
