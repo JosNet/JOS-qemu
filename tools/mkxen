@@ -18,7 +18,8 @@ my $grub = "";
 
 for my $file (split "\n", `find /usr/lib`) {
     chomp($file);
-    if(($file =~ /pv-grub/) or ($file =~ /pygrub/)) {
+    if(($file =~ /pv-grub/ and $file =~ /\.gz/)
+    or ($file =~ /pygrub/ and $file != /\./)) {
         $grub = $file;
     }
 }

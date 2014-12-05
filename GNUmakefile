@@ -370,5 +370,7 @@ bootgrub: grub $(OBJDIR)/fs/fs.img
 xencfg: grub $(OBJDIR)/fs/fs.img
 	perl tools/mkxen
 
+xen: xencfg
+
 .PHONY: all always \
 	handin git-handin tarball tarball-pref clean realclean distclean grade handin-prep handin-check
