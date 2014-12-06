@@ -37,11 +37,12 @@
 .section __xen_guest
     # Lol I'm totally linux
     .ascii "GUEST_OS=linux",
+    .ascii ",GUEST_VER=2.6",
     .ascii ",XEN_VER=xen-3.0",
     .ascii ",VIRT_BASE=0x00100000",
     .ascii ",ELF_PADDR_OFFSET=0x00100000",
     .ascii ",HYPERCALL_PAGE=0x02",
-    .ascii ",PAE=no",
+    .ascii ",PAE=yes",
     .ascii ",LOADER=generic"
     .long   0
 
