@@ -363,14 +363,16 @@ always:
 	@:
 
 bootgrub: grub $(OBJDIR)/fs/fs.img
+	perl tools/mkQemuMenu
 	$(QEMU) $(QEMU_BASE) $(QEMU_HW) -cdrom $(OBJDIR)/bootable.iso -hda $(OBJDIR) /fs/fs.img
 
 
 xencfg: grub $(OBJDIR)/fs/fs.img
+	perl tools/mkXenMenu
 	perl tools/mkxen
 
 xen: xencfg
-	xl create $(OBJDIR)/xenjos.cfg
+	xl create -c $(OBJDIR)/xenjos.cfg
 
 .PHONY: all always \
 	handin git-handin tarball tarball-pref clean realclean distclean grade handin-prep handin-check
