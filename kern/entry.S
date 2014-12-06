@@ -35,7 +35,8 @@
 .long CHECKSUM
 
 .section __xen_guest
-    .string "GUEST_OS=JosNet",
+    # Lol I'm totally linux
+    .string "GUEST_OS=Linux",
     .string ",XEN_VER=xen-3.0",
     .string ",VIRT_BASE=0x00100000",
     .string ",ELF_PADDR_OFFSET=0x00100000",
