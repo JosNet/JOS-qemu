@@ -1,4 +1,5 @@
 default 0
 
 title JOS
+root (hd0)
 kernel /boot/jos-grub

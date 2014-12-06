@@ -3,6 +3,7 @@
 
 for my $file (split "\n", `find fs obj/fs obj/user -type f`) {
     if($file =~ /\/[^\/\.]+$/ && $file !~ /Make/) {
+        print("cp $file root/\n");
         system("cp $file root/");
     }
 }
