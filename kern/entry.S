@@ -37,10 +37,12 @@
 .section __xen_guest
     # Lol I'm totally linux
     .ascii "GUEST_OS=linux",
-    .ascii ",GUEST_VER=2.6",
+    .ascii ",GUEST_VER=2.4",
     .ascii ",XEN_VER=xen-3.0",
-    .ascii ",VIRT_BASE=0x00100000",
-    .ascii ",ELF_PADDR_OFFSET=0x00100000",
+    #.ascii ",VIRT_BASE=0x00100000",
+    .ascii ",VIRT_BASE=0x0",
+   # .ascii ",ELF_PADDR_OFFSET=0x00100000",
+    .ascii ",ELF_PADDR_OFFSET=0x0",
     .ascii ",HYPERCALL_PAGE=0x02",
     .ascii ",PAE=yes",
     .ascii ",LOADER=generic"
@@ -60,9 +62,10 @@ _start = RELOC(entry)
 
 .globl entry
 entry:
-  #jmp entry
-	movw	$0x1234,0x472			# warm boot
+jmp entry
+#	movw	$0x1234,0x472			# warm boot
 
+ # jmp entry
 	# We haven't set up virtual memory yet, so we're running from
 	# the physical address the boot loader loaded the kernel at: 1MB
 	# (plus a few bytes).  However, the C code is linked to run at
@@ -76,7 +79,9 @@ entry:
 	# is defined in entrypgdir.c.
 	movl	$(RELOC(entry_pgdir)), %eax
 	movl	%eax, %cr3
-	# Turn on paging.
+    # Turn on paging.
+	dicks:
+    jmp dicks
 	movl	%cr0, %eax
 	orl	$(CR0_PE|CR0_PG|CR0_WP), %eax
 	movl	%eax, %cr0

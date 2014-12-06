@@ -45,8 +45,8 @@ print $fh (<<EOF
 
 name    = 'josnet';
 vcpus   = 1;
-memory  = 128;
-maxmem  = 128;
+memory  = 512;
+maxmem  = 512;
 $grub
 disk = ['file:$iso,hda:cdrom,r','file:$fs,hdb,w'];
 vif = [ 'model=e1000' ];
