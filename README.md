@@ -1,7 +1,7 @@
 this is JOSnet : prepare to die
 ===============================
   what?
-    -we are putting JOS on amazon's ec2
+    -we are putting JOS on Xen/ec2
     -it's going to run a webserver as a proof of concept
 
   why?
