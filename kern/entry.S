@@ -36,13 +36,13 @@
 
 .section __xen_guest
     # Lol I'm totally linux
-    .string "GUEST_OS=Linux",
-    .string ",XEN_VER=xen-3.0",
-    .string ",VIRT_BASE=0x00100000",
-    .string ",ELF_PADDR_OFFSET=0x00100000",
-    .string ",HYPERCALL_PAGE=0x02",
-    .string ",PAE=no",
-    .string ",LOADER=generic"
+    .ascii "GUEST_OS=linux",
+    .ascii ",XEN_VER=xen-3.0",
+    .ascii ",VIRT_BASE=0x00100000",
+    .ascii ",ELF_PADDR_OFFSET=0x00100000",
+    .ascii ",HYPERCALL_PAGE=0x02",
+    .ascii ",PAE=no",
+    .ascii ",LOADER=generic"
     .long   0
 
 .section .xen_shared_info
