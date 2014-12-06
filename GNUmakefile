@@ -157,11 +157,11 @@ PORT80	:= $(shell expr $(GDBPORT) + 2)
 IMAGES := $(OBJDIR)/kern/kernel.img $(OBJDIR)/fs/fs.img
 QEMU_BASE := -serial mon:stdio -gdb tcp::$(GDBPORT) -smp $(CPUS) -m 1024 $(shell if $(QEMU) -nographic -help | grep -q '^-D '; then echo '-D qemu.log'; fi)
 
-QEMU_HW := -net user -net nic,macaddr=12:34:56:78:90:AB,model=e1000 -redir tcp:$(PORT7)::7 -soundhw sb16 \
+QEMU_HW := -net user -net nic,macaddr=12:34:56:78:90:AB,model=e1000 -redir tcp:$(PORT7)::7 \
 	-redir tcp:$(PORT80)::80 -redir tcp:26514::514 -redir udp:$(PORT7)::7 -net dump,file=qemu.pcap
 
 QEMU_DISK := -hda $(OBJDIR)/kern/kernel.img -hdb $(OBJDIR)/fs/fs.img
-QEMUOPTS := $(QEMU_BASE) $(QEMU_HW) $(QEMU_DISK) $(QEMUEXTRA)
+QEMUOPTS := $(QEMU_BASE) $(QEMU_DISK) $(QEMUEXTRA) #$(QEMU_HW) 
 
 .gdbinit: .gdbinit.tmpl
 	sed "s/localhost:1234/localhost:$(GDBPORT)/" < $^ > $@

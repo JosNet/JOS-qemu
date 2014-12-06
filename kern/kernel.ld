@@ -16,6 +16,29 @@ SECTIONS
 		*(.text .stub .text.* .gnu.linkonce.t.*)
 	}
 
+    __xen_guest ALIGN (0x4000) :
+    {
+        __xen_guest_start__ = . ;
+        *(__xen_guest)
+        __xen_guest_end__ = . ;
+    }
+
+    .xen_shared_info ALIGN (0x4000) :
+    {
+        __xen_shared_info_start__ = . ;
+        *(.xen_shared_info)
+        . += 0x4000;
+        __xen_shared_info_end__ = . ;
+    }
+
+    .xen_hypercall_page ALIGN (0x4000) :
+    {
+        __xen_hypercall_page_start__ = . ;
+        *(.xen_hypercall_page)
+        . += 0x4000;
+        __xen_hypercall_page_end__ = . ;
+    }
+
 	PROVIDE(etext = .);	/* Define the 'etext' symbol to this value */
 
 	.rodata : {

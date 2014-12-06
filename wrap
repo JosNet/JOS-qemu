@@ -1,0 +1,8 @@
+#!/bin/bash
+
+rm obj/fs/fs.img
+make $@ &
+
+sleep 5
+killall qemu
+

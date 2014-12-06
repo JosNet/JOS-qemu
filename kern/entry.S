@@ -34,6 +34,22 @@
 .long MULTIBOOT_HEADER_FLAGS
 .long CHECKSUM
 
+.section __xen_guest
+    .string "GUEST_OS=JosNet",
+    .string ",XEN_VER=xen-3.0",
+    .string ",VIRT_BASE=0x00100000",
+    .string ",ELF_PADDR_OFFSET=0x00100000",
+    .string ",HYPERCALL_PAGE=0x02",
+    .string ",PAE=no",
+    .string ",LOADER=generic"
+    .long   0
+
+.section .xen_shared_info
+    shared_info:
+
+.section .xen_hypercall_page
+    hypercall_page:
+
 # '_start' specifies the ELF entry point.  Since we haven't set up
 # virtual memory when the bootloader enters this code, we need the
 # bootloader to jump to the *physical* address of the entry point.
