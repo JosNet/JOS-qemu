@@ -1,4 +1,4 @@
 #!/bin/bash
 
-ps -ao pid,comm | grep qemu | xargs kill -KILL
+ps -ao pid,comm | grep qemu | xargs kill -KILL >/dev/null 2>/dev/null
 

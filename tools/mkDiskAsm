@@ -1,0 +1,56 @@
+#!/usr/bin/env perl
+
+if($#ARGV != 1) {
+    print "usage: mkDiskAsm <diskimg> <assembly>";
+}
+
+my $img = $ARGV[0];
+my $out = $ARGV[1];
+
+open(IFH, '<', $img) 
+    or die "Can't open $img for reading!";
+open(OFH, '>', $out) 
+    or die "Can't open $out for reading!";
+binmode(IFH); 
+
+my $data = 0;
+my $n = 0;
+my $bits = 0;
+
+print OFH <<EOF
+# Assembly copy of the filesystem image so that
+# we can make a ramfs with nice pointers
+
+.section .inmemfs
+.globl _inmem_fs_begin, _inmem_fs_end
+_inmem_fs_begin:
+
+EOF
+;
+print OFH ".2byte ";
+
+while(read(IFH,$data,2)) {
+    $len = length($data) * 2;
+    $bits += $len / 2;
+    my $hex = unpack("H$len", $data);
+    if(++$n % 8 == 0) {
+        print OFH "0x$hex /*$bits*/\n.2byte ";
+    } else {
+        print OFH "0x$hex, "
+    }
+}
+
+# Pad it out
+while((++$n % 8) != 0) {
+    print OFH "0x0, ";
+}
+print OFH "0x0\n";
+print OFH <<EOF
+
+_inmem_fs_end:
+# We're done!
+EOF
+;
+
+close(IFH);
+close(OFH);
