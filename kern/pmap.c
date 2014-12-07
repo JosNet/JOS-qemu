@@ -340,6 +340,7 @@ page_init(void)
     }
     if (page2pa(&pages[i])==MPENTRY_PADDR)
     {
+        // f1100145
       cprintf("skipping mpentry\n");
       pages[i].pp_ref=1;
       pages[i].pp_link=NULL;
