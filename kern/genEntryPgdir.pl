@@ -9,6 +9,8 @@ print $fh (<<EOF
 
 pte_t entry_pgtable_a[0x400];
 pte_t entry_pgtable_b[0x400];
+pte_t entry_pgtable_c[0x400];
+pte_t entry_pgtable_d[0x400];
 
 // The entry.S page directory maps the first 4MB of physical memory
 // starting at virtual address KERNBASE (that is, it maps virtual
@@ -32,11 +34,19 @@ pde_t entry_pgdir[NPDENTRIES] = {
 		= ((uintptr_t)entry_pgtable_a - KERNBASE) + PTE_P,
 	[1]
 		= ((uintptr_t)entry_pgtable_b - KERNBASE) + PTE_P,
+	[2]
+		= ((uintptr_t)entry_pgtable_c - KERNBASE) + PTE_P,
+	[3]
+		= ((uintptr_t)entry_pgtable_d - KERNBASE) + PTE_P,
 	// Map VA's [KERNBASE, KERNBASE+4MB) to PA's [0, 4MB)
 	[KERNBASE>>PDXSHIFT]
 		= ((uintptr_t)entry_pgtable_a - KERNBASE) + PTE_P + PTE_W,
     [(KERNBASE>>PDXSHIFT)+1]
-		= ((uintptr_t)entry_pgtable_b - KERNBASE) + PTE_P + PTE_W
+		= ((uintptr_t)entry_pgtable_b - KERNBASE) + PTE_P + PTE_W,
+    [(KERNBASE>>PDXSHIFT)+2]
+		= ((uintptr_t)entry_pgtable_c - KERNBASE) + PTE_P + PTE_W,
+    [(KERNBASE>>PDXSHIFT)+3]
+		= ((uintptr_t)entry_pgtable_d - KERNBASE) + PTE_P + PTE_W
 };
 
 EOF
@@ -50,7 +60,7 @@ pte_t entry_pgtable_a[NPTENTRIES] = {
 EOF
 );
 
-for my $i (0..(0x399)) {
+for my $i (0..(0x3ff)) {
     my $paddr = sprintf("0x%04x000", $i);
     print $fh qq($paddr | PTE_P | PTE_W);
     if($i != 0x1000) {
@@ -72,7 +82,7 @@ pte_t entry_pgtable_b[NPTENTRIES] = {
 EOF
 );
 
-for my $i (0x400..(0x799)) {
+for my $i (0x400..(0x7ff)) {
     my $paddr = sprintf("0x%04x000", $i);
     print $fh qq($paddr | PTE_P | PTE_W);
     if($i != 0x1000) {
@@ -86,6 +96,49 @@ print $fh (<<EOF
 EOF
 );
 
+print $fh (<<EOF
+// Entry 0 of the page table maps to physical page 0, entry 1 to
+// physical page 1, etc.
+__attribute__((__aligned__(PGSIZE)))
+pte_t entry_pgtable_c[NPTENTRIES] = {
+EOF
+);
+
+for my $i (0x800..(0xbff)) {
+    my $paddr = sprintf("0x%04x000", $i);
+    print $fh qq($paddr | PTE_P | PTE_W);
+    if($i != 0x1000) {
+        print $fh qq(,\n);
+    }
+}
+
+print $fh (<<EOF
+};
+
+EOF
+);
+
+print $fh (<<EOF
+// Entry 0 of the page table maps to physical page 0, entry 1 to
+// physical page 1, etc.
+__attribute__((__aligned__(PGSIZE)))
+pte_t entry_pgtable_d[NPTENTRIES] = {
+EOF
+);
+
+for my $i (0xc00..(0xfff)) {
+    my $paddr = sprintf("0x%04x000", $i);
+    print $fh qq($paddr | PTE_P | PTE_W);
+    if($i != 0x1000) {
+        print $fh qq(,\n);
+    }
+}
+
+print $fh (<<EOF
+};
+
+EOF
+);
 
 close($fh);
 1;
