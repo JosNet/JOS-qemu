@@ -2,7 +2,11 @@
 
 
 for my $file (split "\n", `find fs obj/fs obj/user -type f`) {
-    if($file =~ /\/[^\/\.]+$/ && $file !~ /Make/) {
+    if(($file =~ /Make/) || ($file =~ /fs/)) {
+        next;
+    }
+
+    if($file =~ /\/[^\/\.]+$/) {
         print("cp $file root/\n");
         system("cp $file root/");
     }

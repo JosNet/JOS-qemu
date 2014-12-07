@@ -57,6 +57,19 @@ $(OBJDIR)/fs/%.o: fs/%.c fs/fs.h inc/lib.h $(OBJDIR)/.vars.USER_CFLAGS
 	@mkdir -p $(@D)
 	$(V)$(CC) -nostdinc $(USER_CFLAGS) -c -o $@ $<
 
+####################
+# Source files for in-memory fs.
+$(OBJDIR)/fs/inmem_fs.S: $(OBJDIR)/fs/fs.img
+	perl tools/mkDiskAsm $(OBJDIR)/fs/fs.img $(OBJDIR)/fs/inmem_fs.S
+
+$(OBJDIR)/fs/inmem_fs.o: $(OBJDIR)/fs/inmem_fs.S
+	@echo + cc $<
+	@mkdir -p $(@D)
+	$(V)$(CC) -nostdinc $(KERN_CFLAGS) -c -o $@ $(OBJDIR)/fs/inmem_fs.S
+
+FSOFILES += $(OBJDIR)/fs/inmem_fs.o
+####################
+
 $(OBJDIR)/fs/fs: $(FSOFILES) $(OBJDIR)/lib/entry.o $(OBJDIR)/lib/libjos.a user/user.ld
 	@echo + ld $@
 	$(V)mkdir -p $(@D)

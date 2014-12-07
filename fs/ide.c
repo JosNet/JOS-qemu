@@ -6,6 +6,7 @@
 
 #include "fs.h"
 #include <inc/x86.h>
+#include <inc/memlayout.h>
 
 #define IDE_BSY		0x80
 #define IDE_DRDY	0x40
@@ -14,9 +15,15 @@
 
 static int diskno = 1;
 
+#ifdef INMEM_FS
+extern void* _inmem_fs_begin;
+extern void* _inmem_fs_end;
+#endif
+
 static int
 ide_wait_ready(bool check_error)
 {
+#ifndef INMEM_FS
 	int r;
 
 	while (((r = inb(0x1F7)) & (IDE_BSY|IDE_DRDY)) != IDE_DRDY)
@@ -24,12 +31,14 @@ ide_wait_ready(bool check_error)
 
 	if (check_error && (r & (IDE_DF|IDE_ERR)) != 0)
 		return -1;
+#endif
 	return 0;
 }
 
 bool
 ide_probe_disk1(void)
 {
+#ifndef INMEM_FS
 	int r, x;
 
 	// wait for Device 0 to be ready
@@ -49,11 +58,15 @@ ide_probe_disk1(void)
 
 	cprintf("Device 1 presence: %d\n", (x < 1000));
 	return (x < 1000);
+#else
+    return true;
+#endif
 }
 
 bool
 ide_probe_diskn(int n)
 {
+#ifndef INMEM_FS
 	int r, x;
 
 	// wait for Device 0 to be ready
@@ -73,6 +86,9 @@ ide_probe_diskn(int n)
 
 	cprintf("Device %d presence: %d\n", n, (x < 1000));
 	return (x < 1000);
+#else
+    return true;
+#endif
 }
 
 void
@@ -85,6 +101,7 @@ ide_set_disk(int d)
 int
 ide_read(uint32_t secno, void *dst, size_t nsecs)
 {
+#ifndef INMEM_FS
 	int r;
 
 	assert(nsecs <= 256);
@@ -103,13 +120,27 @@ ide_read(uint32_t secno, void *dst, size_t nsecs)
 			return r;
 		insl(0x1F0, dst, SECTSIZE/4);
 	}
+#else
 
+    int i = 0;
+    for(; i < nsecs; i++) {
+        void* cur_dst = dst + i*SECTSIZE;
+        void* addr = _inmem_fs_begin + i*SECTSIZE;
+        if(addr < _inmem_fs_end) {
+            memcpy(cur_dst, addr, SECTSIZE);
+        } else {
+            memset(cur_dst, 0, SECTSIZE);
+        }
+    }
+
+#endif
 	return 0;
 }
 
 int
 ide_write(uint32_t secno, const void *src, size_t nsecs)
 {
+#ifndef INMEM_FS
 	int r;
 
 	assert(nsecs <= 256);
@@ -128,7 +159,21 @@ ide_write(uint32_t secno, const void *src, size_t nsecs)
 			return r;
 		outsl(0x1F0, src, SECTSIZE/4);
 	}
+#else
 
+    int i = 0;
+    for(; i < nsecs; i++) {
+        void* cur_src = (void*)src + i*SECTSIZE;
+        void* addr = _inmem_fs_begin + i*SECTSIZE;
+        if(addr < _inmem_fs_end) {
+            memcpy(addr, cur_src, SECTSIZE);
+        } else {
+            // Can't write outside of the image!
+            return -1;
+        }
+    }
+
+#endif
 	return 0;
 }
 

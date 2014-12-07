@@ -113,7 +113,7 @@ GCC_LIB := $(shell $(CC) $(CFLAGS) -print-libgcc-file-name)
 OBJDIRS :=
 
 # Make sure that 'all' is the first target
-all:
+all: kern
 
 # Eliminate default suffix rules
 .SUFFIXES:
@@ -148,13 +148,12 @@ include user/Makefrag
 include fs/Makefrag
 include net/Makefrag
 
-
 CPUS ?= 1
 
 PORT7	:= $(shell expr $(GDBPORT) + 1)
 PORT80	:= $(shell expr $(GDBPORT) + 2)
 
-IMAGES := $(OBJDIR)/kern/kernel.img $(OBJDIR)/fs/fs.img
+IMAGES := $(OBJDIR)/fs/fs.img $(OBJDIR)/kern/kernel.img 
 QEMU_BASE := -serial mon:stdio -gdb tcp::$(GDBPORT) -smp $(CPUS) -m 1024 $(shell if $(QEMU) -nographic -help | grep -q '^-D '; then echo '-D qemu.log'; fi)
 
 QEMU_HW := -net user -net nic,macaddr=12:34:56:78:90:AB,model=e1000 -redir tcp:$(PORT7)::7 \

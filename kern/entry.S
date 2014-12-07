@@ -27,30 +27,13 @@
 ###################################################################
 
 .text
+    # The Multiboot header
+    .align 4
+    .long MULTIBOOT_HEADER_MAGIC
+    .long MULTIBOOT_HEADER_FLAGS
+    .long CHECKSUM
 
-# The Multiboot header
-.align 4
-.long MULTIBOOT_HEADER_MAGIC
-.long MULTIBOOT_HEADER_FLAGS
-.long CHECKSUM
-
-.section __xen_guest
-    # Lol I'm totally linux
-    .ascii "GUEST_OS=linux",
-    .ascii ",GUEST_VER=2.6",
-    .ascii ",XEN_VER=xen-3.0",
-    .ascii ",VIRT_BASE=0x00100000",
-    .ascii ",ELF_PADDR_OFFSET=0x00100000",
-    .ascii ",HYPERCALL_PAGE=0x02",
-    .ascii ",PAE=yes",
-    .ascii ",LOADER=generic"
-    .long   0
-
-.section .xen_shared_info
-    shared_info:
-
-.section .xen_hypercall_page
-    hypercall_page:
+.text
 
 # '_start' specifies the ELF entry point.  Since we haven't set up
 # virtual memory when the bootloader enters this code, we need the
@@ -60,8 +43,13 @@ _start = RELOC(entry)
 
 .globl entry
 entry:
-  #jmp entry
+    #jmp entry
 	movw	$0x1234,0x472			# warm boot
+
+    # set the pae bit for testing
+    movl %eax, %cr4
+    orl (1<<5), %eax
+    movl %cr4, %eax
 
 	# We haven't set up virtual memory yet, so we're running from
 	# the physical address the boot loader loaded the kernel at: 1MB
@@ -102,6 +90,23 @@ relocated:
 	# Should never get here, but in case we do, just spin.
 spin:	jmp	spin
 
+.section __xen_guest
+    # Lol I'm totally linux
+    .ascii "GUEST_OS=linux",
+    .ascii ",GUEST_VER=2.6",
+    .ascii ",XEN_VER=xen-3.0",
+    .ascii ",VIRT_BASE=0x00100000",
+    .ascii ",ELF_PADDR_OFFSET=0x00100000",
+    .ascii ",HYPERCALL_PAGE=0x02",
+    .ascii ",PAE=yes",
+    .ascii ",LOADER=generic"
+    .long   0
+
+.section .xen_shared_info
+    shared_info:
+
+.section .xen_hypercall_page
+    hypercall_page:
 
 .data
 ###################################################################
