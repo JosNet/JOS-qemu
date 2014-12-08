@@ -43,14 +43,19 @@ open(my $fh, '>', $conf)
     or die "Could not new config file '$conf'!";
 print $fh (<<EOF
 
-name    = 'josnet';
-vcpus   = 1;
-memory  = 128;
-maxmem  = 128;
-$grub
-disk = ['file:$iso,hda:cdrom,r','file:$fs,hdb,w'];
-vif = [ 'model=e1000' ];
-extra='(hd0)/boot/grub/menu.lst'
+name         = "broke-ass-hoe"
+kernel       = "/usr/lib/xen/xen-4.4/boot/hvmloader"
+builder      = 'hvm'
+memory       = 256
+vcpus        = 1
+vif          = ['model=e1000']
+disk         = ['file:$iso,hda:cdrom,r','file:$fs,hdb,w'];
+acpi         = 0
+device_model ='qemu-dm'
+sdl          = 0
+serial       = 'pty'
+vnc          = 0
+
 EOF
 );
 
