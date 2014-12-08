@@ -22,27 +22,19 @@
 int32_t
 ipc_recv(envid_t *from_env_store, void *pg, int *perm_store)
 {
-	// LAB 4: Your code here.
-  int realpg;
-  if (!pg)
-    realpg=UTOP;
-  else
-    realpg=(int)pg;
-  int r;
-  r=sys_ipc_recv((void*)realpg);
-  //if there was an error
-  if (r<0)
-  {
-    if (perm_store)
-      *perm_store=0;
-    if (from_env_store)
-      *from_env_store=0;
-    return r;
-  }
-  if (from_env_store)
-    *from_env_store=thisenv->env_ipc_from;
-  if (perm_store)
-    *perm_store=thisenv->env_ipc_perm;
+    int r;
+    void* guarded = pg ? pg : (void*)UTOP;
+    cprintf("ipc_recv(%x,%x,%x)\n", from_env_store, pg, perm_store);
+
+    if((r = sys_ipc_recv(guarded)) < 0)
+        return r;
+    
+    if(from_env_store)
+        *from_env_store = thisenv->env_ipc_from;
+
+    if(perm_store)
+        *perm_store = thisenv->env_ipc_perm;
+
 	return thisenv->env_ipc_value;
 }
 
@@ -57,30 +49,14 @@ ipc_recv(envid_t *from_env_store, void *pg, int *perm_store)
 void
 ipc_send(envid_t to_env, uint32_t val, void *pg, int perm)
 {
-	// LAB 4: Your code here.
-  int realpg;
-  if (!pg)
-    realpg=UTOP;
-  else
-    realpg=(int)pg;
-  int r=1;
-  while (1)
-  {
-	  r=sys_ipc_try_send(to_env,val,(void*)realpg,perm);
-    if (r==0)
-    {
-      return;
+    int r;
+    cprintf("ipc_send(%x, %x, %x, %x)\n", to_env, val, pg, perm);
+    while(-E_IPC_NOT_RECV ==
+      (r = sys_ipc_try_send(to_env, val, pg ? pg : (void*)UTOP, perm)));
+    if(r != 0) {
+        cprintf("ipc error: %e\n", r);
+        panic("Unexpected IPC Error!");
     }
-    else if (r==-E_IPC_NOT_RECV)
-    {
-      sys_yield(); //lets not hog all of the cpu time
-    }
-    else
-    {
-      panic("ipc_send: %d bad return value from sys_ipc", r);
-    }
-  }
-  panic("ipc_send not implemented");
 }
 
 // Find the first environment of the given type.  We'll use this to

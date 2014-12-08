@@ -340,6 +340,7 @@ sys_page_unmap(envid_t envid, void *va)
 //		current environment's address space.
 //	-E_NO_MEM if there's not enough memory to map srcva in envid's
 //		address space.
+/*
 static int
 sys_ipc_try_send(envid_t envid, uint32_t value, void *srcva, unsigned perm)
 {
@@ -361,11 +362,11 @@ sys_ipc_try_send(envid_t envid, uint32_t value, void *srcva, unsigned perm)
     return -E_INVAL;
   }
   //this causes primes to time out...
-  /*if (user_mem_check(curenv, srcva, PGSIZE, perm)<0)
+  if (user_mem_check(curenv, srcva, PGSIZE, perm)<0)
   {
     cprintf("ipc_send perms don't match\n");
     return -E_INVAL;
-  }*/
+  }
   bool sendpage=(int)srcva<UTOP && (int)target->env_ipc_dstva<UTOP;
   if (sendpage)
   {
@@ -387,6 +388,40 @@ sys_ipc_try_send(envid_t envid, uint32_t value, void *srcva, unsigned perm)
   target->env_tf.tf_regs.reg_eax=0;
   return 0;
 }
+*/
+static int
+sys_ipc_try_send(envid_t envid, uint32_t value, void *srcva, unsigned perm)
+{
+    struct Env* e;
+    int env_retcode = envid2env(envid, &e, false);
+    if(env_retcode) return env_retcode;
+
+    if((uintptr_t)srcva < UTOP && ((uintptr_t)srcva % PGSIZE != 0))
+        return -E_INVAL;
+
+    if(!e->env_ipc_recving)
+        return -E_IPC_NOT_RECV;
+
+    e->env_ipc_recving = false;
+    e->env_ipc_value = value;
+    e->env_ipc_from = curenv->env_id;
+    e->env_ipc_perm = perm;
+    e->env_status = ENV_RUNNABLE;
+
+    if((uintptr_t)e->env_ipc_dstva < UTOP) {
+        // To get around the perm_checking of sys_page_map
+        struct PageInfo * page = page_lookup(curenv->env_pgdir, srcva, NULL);
+
+        if(page)
+            return page_insert(e->env_pgdir, page, e->env_ipc_dstva, perm);
+        else
+            return -E_INVAL;
+    }
+    else
+        return 0;
+}
+
+
 
 // Block until a value is ready.  Record that you want to receive
 // using the env_ipc_recving and env_ipc_dstva fields of struct Env,
@@ -399,6 +434,7 @@ sys_ipc_try_send(envid_t envid, uint32_t value, void *srcva, unsigned perm)
 // return 0 on success.
 // Return < 0 on error.  Errors are:
 //	-E_INVAL if dstva < UTOP but dstva is not page-aligned.
+/*
 static int
 sys_ipc_recv(void *dstva)
 {
@@ -413,6 +449,23 @@ sys_ipc_recv(void *dstva)
     sched_yield();
  // }
   return 0;
+}
+*/
+static int
+sys_ipc_recv(void *dstva)
+{
+    curenv->env_ipc_dstva =
+      ((uintptr_t)dstva >= UTOP || ((uintptr_t)dstva % PGSIZE != 0)) ?
+      0 : dstva;
+
+    curenv->env_ipc_recving = true;
+    curenv->env_status = ENV_NOT_RUNNABLE;
+    curenv->env_tf.tf_regs.reg_eax = 0;
+
+    sched_yield();
+
+    // For the compiler
+	return 0;
 }
 
 // Return the current time.
