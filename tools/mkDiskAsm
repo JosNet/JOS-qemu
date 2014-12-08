@@ -27,14 +27,12 @@ _inmem_fs_begin:
 
 EOF
 ;
-print OFH ".2byte ";
+print OFH ".byte ";
 
-while(read(IFH,$data,2)) {
-    $len = length($data) * 2;
-    $bits += $len / 2;
-    my $hex = unpack("H$len", $data);
+while(read(IFH,$data,1)) {
+    my $hex = sprintf("%02x", $data);
     if(++$n % 8 == 0) {
-        print OFH "0x$hex /*$bits*/\n.2byte ";
+        print OFH "0x$hex \n.byte ";
     } else {
         print OFH "0x$hex, "
     }
@@ -48,6 +46,7 @@ print OFH "0x0\n";
 print OFH <<EOF
 
 _inmem_fs_end:
+.2byte 0x0
 # We're done!
 EOF
 ;

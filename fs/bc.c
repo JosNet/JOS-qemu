@@ -1,5 +1,6 @@
 
 #include "fs.h"
+#include "inc/memlayout.h"
 
 // Return the virtual address of this disk block.
 void*
@@ -75,31 +76,30 @@ bc_pgfault(struct UTrapframe *utf)
 void
 flush_block(void *addr)
 {
-	uint32_t blockno = ((uint32_t)addr - DISKMAP) / BLKSIZE;
+    uint32_t blockno = ((uint32_t)addr - DISKMAP) / BLKSIZE;
 
 	if (addr < (void*)DISKMAP || addr >= (void*)(DISKMAP + DISKSIZE))
 		panic("flush_block of bad va %08x", addr);
 
-	// LAB 5: Your code here.
-  addr=ROUNDDOWN(addr,PGSIZE); //round down to pgsize
-  if (!va_is_mapped(addr))
-  {
-    return;
-  }
-  else if (!va_is_dirty(addr))
-  {
-    return;
-  }
-  else
-  {
+    addr=ROUNDDOWN(addr,PGSIZE); //round down to pgsize
+
+    if (!va_is_mapped(addr))
+    {
+      return;
+    }
+    else if (0)//!va_is_dirty(addr))
+    {
+      cprintf("not dirty\n");
+      return;
+    }
+    else
+    {
     //its dirty and mapped
     if (ide_write(blockno*8, addr, 8)<0) //write it
       panic("flush_block ide_write failed\n");
     //clear the dirty bit
     sys_page_map(0,addr,0,addr,(uvpt[PGNUM(addr)]&(~PTE_D))&PTE_SYSCALL);
   }
-  return;
-	panic("flush_block not implemented");
 }
 
 // Test that the block cache works, by smashing the superblock and

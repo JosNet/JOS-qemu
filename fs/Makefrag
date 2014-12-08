@@ -60,7 +60,10 @@ $(OBJDIR)/fs/%.o: fs/%.c fs/fs.h inc/lib.h $(OBJDIR)/.vars.USER_CFLAGS
 ####################
 # Source files for in-memory fs.
 $(OBJDIR)/fs/inmem_fs.S: $(OBJDIR)/fs/fs.img
-	perl tools/mkDiskAsm $(OBJDIR)/fs/fs.img $(OBJDIR)/fs/inmem_fs.S
+	gcc tools/mkdisk.c -o obj/fs/mkdisk
+	obj/fs/mkdisk
+
+# perl tools/mkDiskAsm $(OBJDIR)/fs/fs.img $(OBJDIR)/fs/inmem_fs.S
 
 $(OBJDIR)/fs/inmem_fs.o: $(OBJDIR)/fs/inmem_fs.S
 	@echo + cc $<

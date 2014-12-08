@@ -16,8 +16,8 @@
 static int diskno = 1;
 
 #ifdef INMEM_FS
-extern void* _inmem_fs_begin;
-extern void* _inmem_fs_end;
+extern char _inmem_fs_begin[];
+extern char _inmem_fs_end[];
 #endif
 
 static int
@@ -125,10 +125,11 @@ ide_read(uint32_t secno, void *dst, size_t nsecs)
     int i = 0;
     for(; i < nsecs; i++) {
         void* cur_dst = dst + i*SECTSIZE;
-        void* addr = _inmem_fs_begin + i*SECTSIZE;
-        if(addr < _inmem_fs_end) {
+        void* addr = (void*)_inmem_fs_begin + (i+secno)*SECTSIZE;
+        if(addr < (void*)_inmem_fs_end) {
             memcpy(cur_dst, addr, SECTSIZE);
         } else {
+            cprintf("SHITSHITSHIT\n");
             memset(cur_dst, 0, SECTSIZE);
         }
     }
@@ -164,11 +165,10 @@ ide_write(uint32_t secno, const void *src, size_t nsecs)
     int i = 0;
     for(; i < nsecs; i++) {
         void* cur_src = (void*)src + i*SECTSIZE;
-        void* addr = _inmem_fs_begin + i*SECTSIZE;
-        if(addr < _inmem_fs_end) {
+        void* addr = (void*)_inmem_fs_begin + (secno+i)*SECTSIZE;
+        if(addr < (void*)_inmem_fs_end) {
             memcpy(addr, cur_src, SECTSIZE);
         } else {
-            // Can't write outside of the image!
             return -1;
         }
     }

@@ -11,6 +11,7 @@
 void
 check_super(void)
 {
+    cprintf("got superblock %08x\n", super->s_magic);
 	if (super->s_magic != FS_MAGIC)
 		panic("bad file system magic number");
 
