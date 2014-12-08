@@ -129,10 +129,10 @@ gen_fork(int use_cow)
     if (new_envid < 0) panic("fork: %e", new_envid);
 	if (new_envid == 0) {
         thisenv = &envs[sys_getenvid() & 0xfff];
-        cprintf("I'm the child!\n");
+        //cprintf("I'm the child!\n");
         return 0;
 	}
-    cprintf("I'm the parent!\n");
+    //cprintf("I'm the parent!\n");
 
     if(sys_env_set_pgfault_upcall(new_envid, thisenv->env_pgfault_upcall))
         panic("Couldn't set pgfault upcall for new env");
