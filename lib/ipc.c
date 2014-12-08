@@ -24,7 +24,6 @@ ipc_recv(envid_t *from_env_store, void *pg, int *perm_store)
 {
     int r;
     void* guarded = pg ? pg : (void*)UTOP;
-    cprintf("ipc_recv(%x,%x,%x)\n", from_env_store, pg, perm_store);
 
     if((r = sys_ipc_recv(guarded)) < 0)
         return r;
@@ -50,7 +49,6 @@ void
 ipc_send(envid_t to_env, uint32_t val, void *pg, int perm)
 {
     int r;
-    cprintf("ipc_send(%x, %x, %x, %x)\n", to_env, val, pg, perm);
     while(-E_IPC_NOT_RECV ==
       (r = sys_ipc_try_send(to_env, val, pg ? pg : (void*)UTOP, perm)));
     if(r != 0) {
