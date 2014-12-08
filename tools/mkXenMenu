@@ -10,7 +10,6 @@ default 0
 timeout 0
 
 title JOS
-root (hd0)
 kernel /boot/jos-grub
 EOF
 );
