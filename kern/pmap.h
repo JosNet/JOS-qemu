@@ -62,7 +62,7 @@ struct PageInfo *page_lookup(pde_t *pgdir, void *va, pte_t **pte_store);
 struct PageInfo *user_page_lookup(void *va, pte_t **pte_store);
 void	page_decref(struct PageInfo *pp);
 unsigned int pa2va(physaddr_t pa);
-void boot_map_region(pde_t *pgdir, uintptr_t va, size_t size, physaddr_t pa, int perm);
+static void boot_map_region(pde_t *pgdir, uintptr_t va, size_t size, physaddr_t pa, int perm);
 
 void	tlb_invalidate(pde_t *pgdir, void *va);
 
@@ -92,5 +92,15 @@ page2kva(struct PageInfo *pp)
 }
 
 pte_t *pgdir_walk(pde_t *pgdir, const void *va, int create);
+
+// Helper because we're going to want to find the pte_t* from the va
+// a lot below. The logic is from check_va2pa. Creates a page table
+// if it doesn't already exist.
+static inline pte_t*
+get_pte(pde_t *pgdir, uintptr_t va) {
+    pte_t * page_table = (pte_t*) KADDR(PTE_ADDR(pgdir[PDX(va)]));
+    return &page_table[PTX(va)];
+}
+
 
 #endif /* !JOS_KERN_PMAP_H */
