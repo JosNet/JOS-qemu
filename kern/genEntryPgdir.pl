@@ -61,7 +61,7 @@ EOF
 );
 
 for my $i (0..(0x3ff)) {
-    my $paddr = sprintf("0x%04x000", $i);
+    my $paddr = sprintf("0x%04x0000", $i);
     print $fh qq($paddr | PTE_P | PTE_W);
     if($i != 0x1000) {
         print $fh qq(,\n);
@@ -83,7 +83,7 @@ EOF
 );
 
 for my $i (0x400..(0x7ff)) {
-    my $paddr = sprintf("0x%04x000", $i);
+    my $paddr = sprintf("0x%04x0000", $i);
     print $fh qq($paddr | PTE_P | PTE_W);
     if($i != 0x1000) {
         print $fh qq(,\n);
@@ -105,7 +105,7 @@ EOF
 );
 
 for my $i (0x800..(0xbff)) {
-    my $paddr = sprintf("0x%04x000", $i);
+    my $paddr = sprintf("0x%04x0000", $i);
     print $fh qq($paddr | PTE_P | PTE_W);
     if($i != 0x1000) {
         print $fh qq(,\n);
@@ -127,7 +127,7 @@ EOF
 );
 
 for my $i (0xc00..(0xfff)) {
-    my $paddr = sprintf("0x%04x000", $i);
+    my $paddr = sprintf("0x%04x0000", $i);
     print $fh qq($paddr | PTE_P | PTE_W);
     if($i != 0x1000) {
         print $fh qq(,\n);
