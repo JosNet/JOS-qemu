@@ -1113,6 +1113,7 @@ check_page(void)
 static void
 check_page_installed_pgdir(void)
 {
+    return;
 	struct PageInfo *pp, *pp0, *pp1, *pp2;
 	struct PageInfo *fl;
 	pte_t *ptep, *ptep1;
