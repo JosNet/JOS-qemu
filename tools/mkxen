@@ -44,7 +44,7 @@ open(my $fh, '>', $conf)
 print $fh (<<EOF
 
 name                  = "broke-ass-hoe"
-firmware_override     = "/usr/lib/xen/xen-4.4/boot/hvmloader"
+firmware_override     = "/usr/lib/xen-4.4/boot/hvmloader"
 builder               = 'hvm'
 memory                = 256
 vcpus                 = 1
