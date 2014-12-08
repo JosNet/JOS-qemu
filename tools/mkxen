@@ -10,6 +10,7 @@ if(not (-s "obj/fs/fs.img")) {
 
 my $pwd = `pwd`; chomp($pwd);
 my $iso = "$pwd/obj/bootable.iso";
+#my $iso = "$pwd/obj/kern/kernel";
 my $fs = "$pwd/obj/fs/fs.img";
 my $conf = "$pwd/obj/xenjos.cfg";
 my $exitcode = 0;
@@ -43,14 +44,19 @@ open(my $fh, '>', $conf)
     or die "Could not new config file '$conf'!";
 print $fh (<<EOF
 
-name    = 'josnet';
-vcpus   = 1;
-memory  = 512;
-maxmem  = 512;
-$grub
-disk = ['file:$iso,hda:cdrom,r','file:$fs,hdb,w'];
-vif = [ 'model=e1000' ];
-extra='(hd0)/boot/grub/menu.lst'
+name         = "broke-ass-hoe"
+kernel       = "/usr/lib/xen/xen-4.4/boot/hvmloader"
+builder      = 'hvm'
+memory       = 256
+vcpus        = 1
+vif          = ['model=e1000']
+disk         = ['file:$iso,hda:cdrom,r','file:$fs,hdb,w'];
+acpi         = 0
+device_model ='qemu-dm'
+sdl          = 0
+serial       = 'pty'
+vnc          = 0
+
 EOF
 );
 

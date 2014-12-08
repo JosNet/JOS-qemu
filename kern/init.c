@@ -63,8 +63,8 @@ i386_init(void)
     boot_aps();
 
     //init e1000e
-    e1000e_tx_init();
-    e1000e_rx_init();
+    //e1000e_tx_init();
+    //e1000e_rx_init();
 
 
 	// Start fs.
@@ -72,7 +72,7 @@ i386_init(void)
 
 #if !defined(TEST_NO_NS)
 	// Start ns.
-	ENV_CREATE(net_ns, ENV_TYPE_NS);
+	//ENV_CREATE(net_ns, ENV_TYPE_NS);
 #endif
 
 #if defined(TEST)
@@ -81,7 +81,7 @@ i386_init(void)
 #else
 	// Touch all you want.
 	//ENV_CREATE(user_primes, ENV_TYPE_USER);
-    ENV_CREATE(user_httpd, ENV_TYPE_USER);
+    //ENV_CREATE(user_httpd, ENV_TYPE_USER);
     //ENV_CREATE(user_webserver, ENV_TYPE_USER);
     ENV_CREATE(user_icode,ENV_TYPE_USER);
     //ENV_CREATE(user_telnet_console, ENV_TYPE_USER);

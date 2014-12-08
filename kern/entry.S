@@ -62,7 +62,7 @@ _start = RELOC(entry)
 
 .globl entry
 entry:
-jmp entry
+#jmp entry
 #	movw	$0x1234,0x472			# warm boot
 
  # jmp entry
@@ -80,8 +80,6 @@ jmp entry
 	movl	$(RELOC(entry_pgdir)), %eax
 	movl	%eax, %cr3
     # Turn on paging.
-	dicks:
-    jmp dicks
 	movl	%cr0, %eax
 	orl	$(CR0_PE|CR0_PG|CR0_WP), %eax
 	movl	%eax, %cr0
