@@ -76,6 +76,8 @@ umain(int argc, char** argv)
 int service(int client)
 {
     //dup stdin and stdout
+    close(1);
+    close(0);
     dup(client, 1);
     dup(client, 0);
 
@@ -89,5 +91,6 @@ int service(int client)
       return -1;
     }
     wait(id);
+    cprintf("closing connection\n");
     return 0;
 }
