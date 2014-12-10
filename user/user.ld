@@ -25,7 +25,7 @@ SECTIONS
 
 	.data : {
 		*(.data)
-    *(.inmemfs)
+
 	}
 
 	PROVIDE(edata = .);
@@ -33,6 +33,12 @@ SECTIONS
 	.bss : {
 		*(.bss)
 	}
+
+    . = 0x2000000;
+	.text : {
+		*(.inmemfs)
+    }
+
 
 	PROVIDE(end = .);
 

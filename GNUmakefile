@@ -363,8 +363,7 @@ always:
 
 bootgrub: grub $(OBJDIR)/fs/fs.img
 	perl tools/mkQemuMenu
-	$(QEMU) $(QEMU_BASE) $(QEMU_HW) -cdrom $(OBJDIR)/bootable.iso -hda $(OBJDIR)/fs/fs.img
-
+	$(QEMU) $(QEMU_BASE) $(QEMUEXTRA) $(QEMU_HW) -cdrom $(OBJDIR)/bootable.iso -hda $(OBJDIR)/fs/fs.img
 
 xencfg: grub $(OBJDIR)/fs/fs.img
 	perl tools/mkXenMenu

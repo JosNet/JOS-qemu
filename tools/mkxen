@@ -44,11 +44,10 @@ open(my $fh, '>', $conf)
 print $fh (<<EOF
 
 name                  = "broke-ass-hoe"
-firmware_override     = "/usr/lib/xen-4.4/boot/hvmloader"
 builder               = 'hvm'
 memory                = 256
 vcpus                 = 1
-vif                   = ['model=e1000']
+vif                   = ['model=e1000,mac=12:34:56:78:90:AB']
 disk                  = ['file:$iso,hda:cdrom,r'];
 acpi                  = 0
 device_model_override = '/usr/bin/qemu-system-i386'

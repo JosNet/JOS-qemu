@@ -82,7 +82,7 @@ int service(int client)
     //spawn sh
     int id=0;
     id=spawnl("/sh", "sh", (char*)0);
-	  //id = spawnl("/init", "init", "initarg1", "initarg2", (char*)0);
+	//id = spawnl("/init", "init", "initarg1", "initarg2", (char*)0);
     if (id<0)
     {
 			printf("spawn sh: %e\n", id);
