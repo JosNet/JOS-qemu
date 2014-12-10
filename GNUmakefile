@@ -160,7 +160,7 @@ QEMU_HW := -net user -net nic,macaddr=12:34:56:78:90:AB,model=e1000 -redir tcp:$
 	-redir tcp:$(PORT80)::80 -redir tcp:26514::514 -redir udp:$(PORT7)::7 -net dump,file=qemu.pcap
 
 QEMU_DISK := -hda $(OBJDIR)/kern/kernel.img -hdb $(OBJDIR)/fs/fs.img
-QEMUOPTS := $(QEMU_BASE) $(QEMU_DISK) $(QEMUEXTRA) #$(QEMU_HW) 
+QEMUOPTS := $(QEMU_BASE) $(QEMU_DISK) $(QEMUEXTRA) $(QEMU_HW) 
 
 .gdbinit: .gdbinit.tmpl
 	sed "s/localhost:1234/localhost:$(GDBPORT)/" < $^ > $@

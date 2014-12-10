@@ -25,7 +25,7 @@ SECTIONS
 
 	.data : {
 		*(.data)
-		*(.inmemfs)
+    *(.inmemfs)
 	}
 
 	PROVIDE(edata = .);
