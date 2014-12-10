@@ -89,7 +89,7 @@ flush_block(void *addr)
     }
     else if (!va_is_dirty(addr))
     {
-      cprintf("not dirty\n");
+      //cprintf("not dirty\n");
       return;
     }
     else

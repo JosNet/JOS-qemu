@@ -4,6 +4,7 @@
 
 #define DEPTH 3
 
+int uprintf=0;
 void forktree(const char *cur);
 
 void
@@ -24,7 +25,10 @@ forkchild(const char *cur, char branch)
 void
 forktree(const char *cur)
 {
-	cprintf("%04x: I am '%s'\n", sys_getenvid(), cur);
+  if (uprintf==0)
+	  cprintf("%04x: I am '%s'\n", sys_getenvid(), cur);
+  else
+	  printf("%04x: I am '%s'\n", sys_getenvid(), cur);
 
 	forkchild(cur, '0');
 	forkchild(cur, '1');
@@ -33,6 +37,8 @@ forktree(const char *cur)
 void
 umain(int argc, char **argv)
 {
+  if (argc>1)
+    uprintf=1;
 	forktree("");
 }
 
