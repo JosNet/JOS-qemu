@@ -43,7 +43,7 @@ open(my $fh, '>', $conf)
     or die "Could not new config file '$conf'!";
 print $fh (<<EOF
 
-name                  = "broke-ass-hoe"
+name                  = "josnet"
 builder               = 'hvm'
 memory                = 256
 vcpus                 = 1
