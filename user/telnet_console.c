@@ -81,6 +81,15 @@ int service(int client)
     dup(client, 1);
     dup(client, 0);
 
+    //authentication
+    char *buf;
+    buf = readline("authentication: ");
+    if(strncmp(buf, "password", 8)!=0)
+    {
+      printf("incorrect\n");
+      return 0;
+    }
+
     //spawn sh
     int id=0;
     id=spawnl("/sh", "sh", (char*)0);

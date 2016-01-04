@@ -117,12 +117,19 @@ devfile_read(struct Fd *fd, void *buf, size_t n)
 	// system server.
 	int r;
 
-	fsipcbuf.read.req_fileid = fd->fd_file.id;
+	//cprintf("reading %d bytes\n", n);
+  fsipcbuf.read.req_fileid = fd->fd_file.id;
 	fsipcbuf.read.req_n = n;
 	if ((r = fsipc(FSREQ_READ, NULL)) < 0)
 		return r;
 	assert(r <= n);
-	assert(r <= PGSIZE);
+  //if (r>PGSIZE)
+ // {
+  //  cprintf("error: file read is larger than 1 page, %d\n", r);
+   // return 0;
+ // }
+	//assert(r <= PGSIZE); //commenting this opens up a complicated class of errors
+  //if the buf is not contiguous in memory
 	memmove(buf, fsipcbuf.readRet.ret_buf, r);
 	return r;
 }

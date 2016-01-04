@@ -106,6 +106,10 @@ int
 nsipc_send(int s, const void *buf, int size, unsigned int flags)
 {
 	nsipcbuf.send.req_s = s;
+  if(size>=1600)
+  {
+    cprintf("size is >=1600 in nsipc_send\n");
+  }
 	assert(size < 1600);
 	memmove(&nsipcbuf.send.req_buf, buf, size);
 	nsipcbuf.send.req_size = size;
