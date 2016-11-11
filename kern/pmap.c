@@ -145,7 +145,8 @@ mem_init(void)
 	// each physical page, there is a corresponding struct PageInfo in this
 	// array.  'npages' is the number of physical pages in memory.  Use memset
 	// to initialize all fields of each struct PageInfo to 0.
- 
+
+    cprintf("have %d pages\r\n", npages);
     uint32_t pt_size = npages * sizeof(struct PageInfo);
     pages = (struct PageInfo*) boot_alloc(pt_size);
     memset((void*)pages, 0, pt_size);

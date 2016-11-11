@@ -21,19 +21,31 @@ readline(const char *prompt)
 	echoing = iscons(0);
 	while (1) {
 		c = getchar();
-		if (c < 0) {
+		if (c < 0)
+    {
 			if (c != -E_EOF)
 				cprintf("read error: %e\n", c);
 			return NULL;
-		} else if ((c == '\b' || c == '\x7f') && i > 0) {
+		}
+    //backspace
+    else if ((c == '\b' || c == '\x7f') && i > 0)
+    {
 			if (echoing)
+      {
 				cputchar('\b');
-			i--;
-		} else if (c >= ' ' && i < BUFLEN-1) {
+        buf[--i]=0;
+        cprintf("\33[2K\r");
+        cprintf("%s%s", prompt, buf);
+      }
+		}
+    else if (c >= ' ' && i < BUFLEN-1)
+    {
 			if (echoing)
 				cputchar(c);
 			buf[i++] = c;
-		} else if (c == '\n' || c == '\r') {
+		}
+    else if (c == '\n' || c == '\r')
+    {
 			if (echoing)
 				cputchar('\n');
 			buf[i] = 0;
