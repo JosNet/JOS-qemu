@@ -1,5 +1,6 @@
 #include <inc/stdio.h>
 #include <inc/error.h>
+#include <inc/string.h>
 
 #define BUFLEN 1024
 static char buf[BUFLEN];
@@ -40,9 +41,18 @@ readline(const char *prompt)
 		}
     else if (c >= ' ' && i < BUFLEN-1)
     {
-			if (echoing)
-				cputchar(c);
 			buf[i++] = c;
+      if (buf[i-2]=='[' && buf[i-1]=='A')
+      {
+        memmove(buf, &buf[i-2], 2);
+        buf[2]=0;
+        cprintf("\33[2K\r");
+        return buf;
+      }
+			if (echoing)
+      {
+				cputchar(c);
+      }
 		}
     else if (c == '\n' || c == '\r')
     {

@@ -26,7 +26,7 @@ runcmd(char* s)
 	char *argv[MAXARGS], *t, argv0buf[BUFSIZ];
 	int argc, c, i, r, p[2], fd, pipe_child;
 	int id;
-	
+
 	pipe_child = 0;
 	gettoken(s, 0);
 
@@ -327,17 +327,22 @@ umain(int argc, char **argv)
 	if (interactive == '?')
 		interactive = iscons(0);
 
+  int upcnt=0;
+  char cmdbuf[1024];
 	while (1) {
 		char *buf;
+		interactive = iscons(0);
+    memset(cmdbuf, 0, 1024);
+    upcnt=0;
 
-		//buf = readline(interactive ? "$ " : NULL);
-		buf = readline("$ ");
+uparrow:
+		buf = readline(interactive ? "$ " : NULL);
+		//buf = readline("$ ");
     if (buf == NULL) {
 			if (debug)
 				cprintf("EXITING\n");
 			exit();	// end of file
 		}
-
     //for history
     if (strncmp(buf, ":hist", 5)==0)
     {
@@ -354,13 +359,36 @@ umain(int argc, char **argv)
         int i=curline-1;
         for (i; i>=0; --i)
         {
-         cprintf("\t%d  %s\n", i+1, history[i]);
+         cprintf("\t%d  %s\n", curline - i, history[i]);
         }
         continue;
       }
     }
-    memcpy(history[curline], buf, strlen(buf));
-    curline=(curline+1) % 100;
+    else if (strncmp(buf, "[A", 2)==0)
+    {
+      int index = curline -1 -upcnt;
+      if (index<0)
+      {
+        index=0;
+      }
+      else
+      {
+        upcnt+=1;
+      }
+      buf=history[index];
+      memcpy(cmdbuf, buf, strlen(buf));
+      cmdbuf[strlen(buf)]=0;
+      interactive=0;
+      cprintf("\33[2K\r");
+      cprintf("[%d]$%s", upcnt, cmdbuf);
+      goto uparrow;
+    }
+    memcpy(&cmdbuf[strlen(cmdbuf)], buf, strlen(buf));
+    if (strlen(cmdbuf)>0)
+    {
+      memcpy(history[curline], cmdbuf, strlen(cmdbuf));
+      curline=(curline+1) % 100;
+    }
 		if (debug)
 			cprintf("LINE: %s\n", buf);
 		if (buf[0] == '#')
@@ -375,12 +403,12 @@ umain(int argc, char **argv)
 			panic("fork: %e", r);
 		if (debug)
 			cprintf("FORK: %d\n", r);
-		if (r == 0) 
+		if (r == 0)
 		{
 			//child runs
-			runcmd(buf);
-		        exit();
-		} 
+			runcmd(cmdbuf);
+		  exit();
+		}
 		else
 		{
 			//parent waits
