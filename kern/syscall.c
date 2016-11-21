@@ -150,6 +150,11 @@ sys_env_set_trapframe(envid_t envid, struct Trapframe *tf)
   //enforce the trapframe conditions
   env->env_tf.tf_cs|=0x3;
   env->env_tf.tf_eflags|=FL_IF;
+  env->env_tf.tf_eflags &=  ~FL_IOPL_3;
+  if (env->env_type == ENV_TYPE_FS)
+  {
+    env->env_tf.tf_eflags |=  FL_IOPL_3;
+  }
   return 0;
 }
 

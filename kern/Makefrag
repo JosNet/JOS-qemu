@@ -104,6 +104,7 @@ KERN_BINFILES +=	user/testpteshare \
 			user/testpiperace \
 			user/testpiperace2 \
 			user/primespipe \
+			user/faultio \
 			user/testkbd \
 			user/testshell \
       user/telnet_console

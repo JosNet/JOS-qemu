@@ -543,6 +543,7 @@ env_run(struct Env *e)
 	//	and make sure you have set the relevant parts of
 	//	e->env_tf to sensible values.
 
+  //cprintf("running env with CPL 0x%x\r\n", e->env_tf.tf_cs&0x3);
     if(e != curenv && curenv && curenv->env_status == ENV_RUNNING)
         curenv->env_status = ENV_RUNNABLE;
     curenv = e;

@@ -7,7 +7,7 @@
 #endif /* not __ASSEMBLER__ */
 
 // Should we map the filesystem as a ramdisk?
-#define INMEM_FS
+//#define INMEM_FS
  
 /*
  * This file contains definitions for memory management in our OS,

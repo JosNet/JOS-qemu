@@ -304,8 +304,16 @@ trap(struct Trapframe *tf)
 		curenv->env_tf = *tf;
 		// The trapframe on the stack should be ignored from here on.
 		tf = &curenv->env_tf;
+    if (tf->tf_trapno != IRQ_OFFSET+IRQ_TIMER && tf->tf_trapno!= T_SYSCALL)
+    {
+      //print_trapframe(tf);
+    }
 	}
 
+  if (tf->tf_trapno == 13)
+  {
+    cprintf("gpf");
+  }
 	// Record that tf is the last real trapframe so
 	// print_trapframe can print some additional information.
 	last_tf = tf;
